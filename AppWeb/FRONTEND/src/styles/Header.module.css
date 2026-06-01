@@ -1,0 +1,59 @@
+.header {
+  color: white;
+  padding: 1rem 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  text-decoration: none;
+}
+
+.logo h1 {
+  margin: 0 auto;
+  font-size: 1rem;
+  font-weight: 400;
+  color: rgb(0, 0, 0);
+  transition: opacity 0.3s ease;
+}
+
+.logo h1:hover {
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav a {
+  color: rgb(0, 0, 0);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.profileImg {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.profileImg:hover {
+  transform: scale(1.1);
+}
+
+.nav a:hover {
+  opacity: 0.8;
+  font-size: 1.1rem;
+}
