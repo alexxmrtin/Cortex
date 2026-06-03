@@ -1,0 +1,67 @@
+.main {
+  width: 100%;
+  height: 30rem;
+  margin: 0;
+  padding: 2rem;
+  background: url('../assets/Imagen1_Home.jpg') center/cover no-repeat;
+  border-radius: 20px;
+  border: 5px solid #5c6560;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  gap: 2rem;
+}
+
+.hero h1 {
+  font-size: 2.2rem;
+  color: #333;
+  text-align: left;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.hero a {
+  padding: 0.2rem 0.2rem;
+  background-color: #000000c4;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.hero a:hover {
+  font-size: 0.8rem;
+}
+
+.hero2 {
+  display: flex;
+  flex-direction: column;
+  width: 20%;
+  height: 14rem;
+  margin: 1.3rem 0 0 0;
+  padding: 0;
+  gap: 1rem;
+  background: white;
+  border-radius: 20px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.hero2 h4{
+  padding: 1rem 0 0 1rem;
+  font-weight: 700;
+  color: #333333bf;
+ }
+
+ .hero2 ul{
+  padding: auto;
+  margin: 0 0 0 2rem;
+ }
