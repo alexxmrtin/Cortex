@@ -1,0 +1,110 @@
+.page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 20px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.logo {
+  font-size: 2.5rem;
+  color: #5c6560;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.input {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  border: 2px solid #c0bfc2;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #5c6560;
+}
+
+.button {
+  margin-top: 0.4rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #5c6560;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.button:hover {
+  background-color: #4a524d;
+}
+
+.footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.link {
+  color: #5c6560;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

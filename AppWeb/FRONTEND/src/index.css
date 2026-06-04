@@ -17,7 +17,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -52,12 +52,12 @@
 
 body {
   margin: 0;
+  background-color: white;
 }
 
 #root {
   width: 100%;
   padding: 0 2rem;
-  min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
