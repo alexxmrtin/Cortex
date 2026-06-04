@@ -1,10 +1,17 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import styles from '../styles/Header.module.css';
-import perfilImg from '../assets/perfilNoDefinido.jpg';  // ← Importa aquí
+import perfilImg from '../assets/perfilNoDefinido.jpg';
 
 export default function Header() {
+  const location = useLocation();
+
+  let headerClass = styles.header;
+  if (location.pathname !== '/') {
+    headerClass = headerClass + ' ' + styles.headerBorder;
+  }
+
   return (
-    <header className={styles.header}>
+    <header className={headerClass}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
           <h1>Cortex 0.1v</h1>

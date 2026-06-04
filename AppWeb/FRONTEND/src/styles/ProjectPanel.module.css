@@ -1,0 +1,101 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.titulo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.explorador {
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  overflow: hidden;
+}
+
+.exploradorHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #555;
+  background: #f8f8f8;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.exploradorCuerpo {
+  padding: 0.4rem 0;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  padding-right: 1rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.fila:hover {
+  background: #f4f4f4;
+}
+
+.filaIcono {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.filaNombre {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.descripcionBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.descripcionLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #555;
+}
+
+.descripcionTexto {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px solid #c0bfc2;
+  font-size: 0.95rem;
+  color: #333;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.descripcionTexto:focus {
+  border-color: #5c6560;
+}
+
+.noEncontrado {
+  color: #aaa;
+  font-size: 1rem;
+  padding: 2rem;
+}

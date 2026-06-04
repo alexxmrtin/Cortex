@@ -1,0 +1,201 @@
+.page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  height: 45rem;
+  background: white;
+  border-radius: 20px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  padding: 2rem 2rem;
+  margin: 0 2rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.logo {
+  font-size: 2.5rem;
+  color: #5c6560;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.input {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  border: 2px solid #c0bfc2;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #5c6560;
+}
+
+.button {
+  margin-top: 0.4rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #5c6560;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.button:hover {
+  background-color: #4a524d;
+}
+
+.buttonSecundario {
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 2px solid #c0bfc2;
+  background-color: white;
+  color: #555;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.buttonSecundario:hover {
+  background-color: #f4f4f4;
+  border-color: #5c6560;
+}
+
+.zonaSubida {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem 1rem;
+  border-radius: 12px;
+  border: 2px dashed #c0bfc2;
+  background: #fafafa;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: default;
+}
+
+.zonaSubidaActiva {
+  border-color: #5c6560;
+  background: #f0f2f1;
+}
+
+.zonaTexto {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.zonaBotones {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.zonaBoton {
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 2px solid #c0bfc2;
+  background: white;
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.zonaBoton:hover {
+  border-color: #5c6560;
+  background: #f4f4f4;
+}
+
+.listaArchivos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.archivoItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  background: #f4f4f4;
+  font-size: 0.85rem;
+}
+
+.archivoNombre {
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archivoEliminar {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  padding: 0 0.2rem;
+  transition: color 0.15s;
+}
+
+.archivoEliminar:hover {
+  color: #e05555;
+}

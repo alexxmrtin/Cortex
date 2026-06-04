@@ -3,6 +3,10 @@
   padding: 1rem 0;
 }
 
+.headerBorder {
+  border-bottom: 2px solid #c0bfc2;
+}
+
 .container {
   max-width: 100%;
   margin: 0 auto;
