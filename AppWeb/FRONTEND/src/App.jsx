@@ -8,6 +8,9 @@ import Projects from './pages/Projects';
 import ProjectPanel from './pages/ProjectPanel';
 import AgregarProyecto from './pages/AgregarProyecto';
 import CentroIA from './pages/CentroIA';
+import Servicios from './pages/Services';
+import ServicesPanel from './pages/ServicesPanel';
+import AgregarServicio from './pages/AgregarServicio';
 import './App.css';
 
 export default function App() {
@@ -28,6 +31,10 @@ export default function App() {
           </Route>
 
           <Route path='centroIA' element={<CentroIA />}></Route>
+          <Route path='/servicios' element={<Servicios/>}>
+            <Route path=':id' element={<ServicesPanel />} />
+            <Route path='agregarServicio' element={<AgregarServicio />} />
+          </Route>
 
         </Routes>
         <Footer />

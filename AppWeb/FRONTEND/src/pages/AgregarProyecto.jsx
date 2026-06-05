@@ -7,8 +7,9 @@ export default function AgregarProyecto() {
 
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [archivos, setArchivos] = useState([]);
-  const [arrastrandoSobre, setArrastrandoSobre] = useState(false);
+
+  const [archivos, setArchivos] = useState([]); //Aqui se guardan los archivos seleccionados, se inicializan vacios
+  const [arrastrandoSobre, setArrastrandoSobre] = useState(false);  //Estado que permite saber si el usuario esta arrastrando algo sobre un elemento html
 
   const inputArchivosRef = useRef(null);
   const inputCarpetaRef = useRef(null);

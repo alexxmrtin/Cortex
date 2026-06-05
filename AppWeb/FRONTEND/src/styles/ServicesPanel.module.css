@@ -1,0 +1,169 @@
+.panel {
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.noEncontrado {
+  color: #aaa;
+  padding: 1.5rem;
+}
+
+/* ── Cabecera ── */
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 1.2rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.titulo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.2rem;
+}
+
+.subtitulo {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+/* ── Grid de información ── */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 2rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.infoLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #aaa;
+}
+
+.infoLink {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #555;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.infoLink:hover {
+  color: #222;
+}
+
+.infoValor {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* ── Estado ── */
+.estadoActivo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #22a55a;
+  background: #edfaf3;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  width: fit-content;
+  border: 1.5px solid #22a55a;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.estadoActivo:hover {
+  background: #22a55a;
+  color: white;
+}
+
+.estadoInactivo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e03e3e;
+  background: #fdf0f0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  width: fit-content;
+  border: 1.5px solid #e03e3e;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.estadoInactivo:hover {
+  background: #e03e3e;
+  color: white;
+}
+
+.estadoActivoBadge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #22a55a;
+  padding: 0rem 0.1rem;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.estadoInactivoBadge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e03e3e;
+  padding: 0rem 0.1rem;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+/* ── Descripción ── */
+.descripcionBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.descripcionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #aaa;
+}
+
+.descripcionTexto {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.7rem 0.9rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #333;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.descripcionTexto:focus {
+  border-color: #c0bfc2;
+}
+
+.descripcionTexto::placeholder {
+  color: #bbb;
+}
