@@ -164,13 +164,22 @@ export default function Home() {
           <Link to="/login">Iniciar sesión</Link>
         </section>
         <section className={styles.hero2}>
-          <h4>Proyectos Recientes</h4>
+          <h4>Servicios activos</h4>
 
           {/* La lista hacerla Dinámica, dejo la estructura para tener una idea de lo que quiero */}
-          <ul>
-            <li>Proyecto 1</li>
-            <li>Proyecto 2</li>
-            <li>Proyecto 3</li>
+          <ul className={styles.serviciosList}>
+            <li className={styles.serviciosItem}>
+              Servidor web Cortex
+              <span className={styles.puntoActivo}/>
+            </li>
+            <li className={styles.serviciosItem}>
+              Cache Cortex
+              <span className={styles.puntoActivo}/>
+            </li>
+            <li className={styles.serviciosItem}>
+              Base de datos Cortex
+              <span className={styles.puntoActivo}/>
+            </li>
           </ul>
         </section>
       </main>
