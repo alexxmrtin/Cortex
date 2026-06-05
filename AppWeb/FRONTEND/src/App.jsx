@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Projects from './pages/Projects';
 import ProjectPanel from './pages/ProjectPanel';
 import AgregarProyecto from './pages/AgregarProyecto';
+import CentroIA from './pages/CentroIA';
 import './App.css';
 
 export default function App() {
@@ -25,6 +26,8 @@ export default function App() {
             <Route path=':id' element={<ProjectPanel />} />
             <Route path='agregarProyecto' element={<AgregarProyecto />} />
           </Route>
+
+          <Route path='centroIA' element={<CentroIA />}></Route>
 
         </Routes>
         <Footer />
