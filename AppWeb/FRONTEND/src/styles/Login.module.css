@@ -8,6 +8,7 @@
 .card {
   width: 100%;
   max-width: 420px;
+  margin: 2rem;
   background: white;
   border-radius: 20px;
   border: 5px solid #c0bfc2;
@@ -28,6 +29,7 @@
 .logo {
   font-size: 2.5rem;
   color: #5c6560;
+  margin-bottom: 1rem;
 }
 
 .title {
