@@ -1,0 +1,4 @@
+Middlewares personalizados de la aplicación.
+Un middleware intercepta cada petición antes de que llegue al endpoint
+y cada respuesta antes de que salga. Útil para logging, autenticación global,
+manejo de errores, etc. Los middlewares simples se configuran en main.py.

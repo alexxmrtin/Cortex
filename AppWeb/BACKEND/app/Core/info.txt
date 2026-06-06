@@ -1,0 +1,3 @@
+Utilidades transversales que usa toda la aplicación.
+Por ejemplo: configuración (settings), seguridad (JWT, hashing de contraseñas),
+y la conexión a la base de datos.

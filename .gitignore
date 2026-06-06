@@ -1,3 +1,26 @@
+###BACKEND###
+
+# Virtual environment
+venv/
+.venv/
+
+# Database
+*.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos subidos por usuarios
+AppWeb/BACKEND/Storage/
+
+# Logs y caché del backend
+AppWeb/BACKEND/Logs/
+AppWeb/BACKEND/Cache/
+
+
+
 ###FRONTEND###
 
 # Dependencies

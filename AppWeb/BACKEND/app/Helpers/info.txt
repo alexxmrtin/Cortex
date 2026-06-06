@@ -1,0 +1,3 @@
+Funciones auxiliares reutilizables que no encajan en otra carpeta.
+Por ejemplo: construir el árbol de archivos de un proyecto, formatear fechas,
+procesar rutas de archivos subidos, etc.

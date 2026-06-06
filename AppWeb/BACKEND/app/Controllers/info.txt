@@ -1,0 +1,3 @@
+Contiene los routers de FastAPI. Cada archivo agrupa los endpoints
+relacionados con un recurso (proyectos, servicios, usuarios...).
+Aquí se define qué hace la API cuando llega una petición HTTP.

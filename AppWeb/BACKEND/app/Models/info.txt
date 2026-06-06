@@ -1,0 +1,3 @@
+Modelos de SQLAlchemy. Cada archivo define una tabla de la base de datos
+y sus columnas. SQLAlchemy usa estos modelos para crear las tablas
+y para hacer queries (SELECT, INSERT, UPDATE, DELETE).
