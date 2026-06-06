@@ -1,0 +1,318 @@
+.page {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  min-height: 80vh;
+  margin-left: 2rem;
+  align-items: flex-start;
+}
+
+/* ── Nav lateral ── */
+.nav {
+  flex-shrink: 0;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  padding: 1.2rem 0.8rem;
+}
+
+.navTitulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #aaa;
+  padding: 0 0.4rem 0.6rem;
+  margin: 0 0 0.4rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.navItem {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navItem:hover {
+  background: #f4f4f4;
+  color: #222;
+}
+
+.navItemActivo {
+  background: #f4f4f4;
+  border: none;
+  text-align: left;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #5c6560;
+  cursor: pointer;
+}
+
+/* ── Contenido principal ── */
+.contenido {
+  flex: 1;
+  max-width: 560px;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.seccionTitulo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.seccionDesc {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0;
+  margin-top: -0.6rem;
+}
+
+/* ── Cards internas ── */
+.card {
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cardPeligro {
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #f5c0c0;
+  box-shadow: 0 2px 8px rgba(200, 80, 80, 0.07);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cardTitulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.cardTituloPeligro {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 0.88rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Avatar ── */
+.avatarFila {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  padding: 1.2rem 1.5rem;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 3px solid #c0bfc2;
+}
+
+.avatarInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.avatarHint {
+  font-size: 0.78rem;
+  color: #aaa;
+}
+
+/* ── Campos ── */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.input {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  border: 2px solid #c0bfc2;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  background: white;
+}
+
+.input:focus {
+  border-color: #5c6560;
+}
+
+.input[readonly] {
+  background: #f9f9f9;
+  color: #aaa;
+  cursor: default;
+}
+
+/* ── Botones ── */
+.botonPrimario {
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #5c6560;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: flex-start;
+  font-family: inherit;
+}
+
+.botonPrimario:hover {
+  background-color: #4a524d;
+}
+
+.botonSecundario {
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  border: 2px solid #c0bfc2;
+  background: white;
+  color: #555;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  align-self: flex-start;
+  font-family: inherit;
+}
+
+.botonSecundario:hover {
+  background: #f4f4f4;
+  border-color: #5c6560;
+}
+
+.botonPeligro {
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #c0392b;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: flex-start;
+  font-family: inherit;
+}
+
+.botonPeligro:hover {
+  background-color: #a93226;
+}
+
+/* ── Tema ── */
+.temaOpciones {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.temaBoton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  border: 2px solid #c0bfc2;
+  background: white;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+
+.temaBoton:hover {
+  border-color: #5c6560;
+  background: #f4f4f4;
+}
+
+.temaBotonActivo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  border: 2px solid #5c6560;
+  background: #f0f2f1;
+  color: #5c6560;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Confirmación eliminación ── */
+.confirmacion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.confirmacionTexto {
+  font-size: 0.88rem;
+  color: #c0392b;
+  font-weight: 600;
+  margin: 0;
+}
+
+.confirmacionBotones {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
