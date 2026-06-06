@@ -31,7 +31,7 @@
 
 .nav {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   font-size: 1.1rem;
   font-weight: 500;
 }
@@ -40,6 +40,7 @@
   color: rgb(0, 0, 0);
   text-decoration: none;
   transition: opacity 0.3s ease;
+  padding: 0.5rem;
 }
 
 .profileImg {
@@ -49,13 +50,12 @@
   object-fit: cover;
   cursor: pointer;
   transition: transform 0.3s ease;
-}
-
-.profileImg:hover {
-  transform: scale(1.2);
+  margin-top: 0.4rem;
+  
 }
 
 .nav a:hover {
-  opacity: 0.8;
-  font-size: 1.2rem;
+  background: #f4f4f4;
+  color: #555;
+  border-radius: 0.5rem;
 }

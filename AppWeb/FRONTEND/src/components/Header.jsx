@@ -18,8 +18,8 @@ export default function Header() {
         </Link>
         <nav className={styles.nav}>
           <Link to="/">Inicio</Link>
-          <Link to="/settings">Ajustes</Link>
-          <Link to="/perfil"><img src={perfilImg} alt="Perfil" className={styles.profileImg}/></Link>
+          <Link to="/ajustes">Ajustes</Link>
+          <img src={perfilImg} alt="Perfil" className={styles.profileImg}/>
         </nav>
       </div>
     </header>

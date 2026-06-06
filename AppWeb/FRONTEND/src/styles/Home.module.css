@@ -36,10 +36,12 @@
   font-weight: 700;
   font-size: 0.7rem;
   white-space: nowrap;
+  transition: font-size 0.1s ease, padding 0.2s ease;
 }
 
 .hero a:hover {
   font-size: 0.8rem;
+  padding: 0.3rem 0.3rem;
 }
 
 .hero2 {
@@ -223,10 +225,6 @@
   text-decoration: none;
   border-radius: 10px;
   transition: background 0.15s;
-}
-
-.sidebarUser:hover {
-  background: #f4f4f4;
 }
 
 .sidebarAvatar {

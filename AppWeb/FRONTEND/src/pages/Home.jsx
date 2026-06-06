@@ -219,13 +219,13 @@ export default function Home() {
             </Link>
           </nav>
 
-          <Link to="/perfil" className={styles.sidebarUser}>
+          <div className={styles.sidebarUser}>
             <img src={perfilNoDefinido} alt="perfil" className={styles.sidebarAvatar} />
             <div className={styles.sidebarUserInfo}>
               <span className={styles.sidebarUserName}>Usuario</span>
               <span className={styles.sidebarUserRole}>Miembro</span>
             </div>
-          </Link>
+          </div>
         </aside>
 
         <div className={styles.calendary}>

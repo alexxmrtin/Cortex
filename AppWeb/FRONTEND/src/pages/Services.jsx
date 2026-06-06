@@ -63,7 +63,7 @@ export default function Services() {
 
         </nav>
 
-        <Link to="/perfil" className={styles.sidebarUser}>
+        <Link to="/ajustes" className={styles.sidebarUser}>
           <img src={perfilNoDefinido} alt="perfil" className={styles.sidebarAvatar} />
           <div className={styles.sidebarUserInfo}>
             <span className={styles.sidebarUserName}>Usuario</span>

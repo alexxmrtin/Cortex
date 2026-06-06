@@ -11,6 +11,7 @@ import CentroIA from './pages/CentroIA';
 import Servicios from './pages/Services';
 import ServicesPanel from './pages/ServicesPanel';
 import AgregarServicio from './pages/AgregarServicio';
+import Ajustes from './pages/Ajustes';
 import './App.css';
 
 export default function App() {
@@ -20,7 +21,9 @@ export default function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
+          
           <Route path="/login" element={<Login />} />
+          
           <Route path="/registro" element={<Register />} />
 
           {/*Usamos una ruta anidada con React Router, Renderizamos /proyects y dentro de el usando <outlet> reservamos un hueco donde react router puede insertar una ruta hija */}
@@ -31,10 +34,13 @@ export default function App() {
           </Route>
 
           <Route path='centroIA' element={<CentroIA />}></Route>
+          
           <Route path='/servicios' element={<Servicios/>}>
             <Route path=':id' element={<ServicesPanel />} />
             <Route path='agregarServicio' element={<AgregarServicio />} />
           </Route>
+
+          <Route path='/ajustes' element={<Ajustes />} />
 
         </Routes>
         <Footer />
