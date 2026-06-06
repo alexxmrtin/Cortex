@@ -8,7 +8,7 @@
 .card {
   width: 100%;
   max-width: 480px;
-  height: 45rem;
+  min-height: 45rem;
   background: white;
   border-radius: 20px;
   border: 5px solid #c0bfc2;
@@ -17,6 +17,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding: auto ;
 }
 
 .cardHeader {

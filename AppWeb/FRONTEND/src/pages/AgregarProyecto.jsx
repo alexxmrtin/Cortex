@@ -11,37 +11,42 @@ export default function AgregarProyecto() {
   const [archivos, setArchivos] = useState([]); //Aqui se guardan los archivos seleccionados, se inicializan vacios
   const [arrastrandoSobre, setArrastrandoSobre] = useState(false);  //Estado que permite saber si el usuario esta arrastrando algo sobre un elemento html
 
+  //Estos refs se van a usar para apuntar a unos <input> lo cuales abren el explorador de archivos o carpetas
   const inputArchivosRef = useRef(null);
   const inputCarpetaRef = useRef(null);
 
+
+  //"e" es el evento que ocurre en el dom y que maneja estos handlers
   function handleNombreChange(e) {
     setNombre(e.target.value);
   }
-
   function handleDescripcionChange(e) {
     setDescripcion(e.target.value);
   }
 
+  //Declaramos una constante donde vamos a guardar todos los archivos que queremos subir
   function agregarArchivos(nuevos) {
     const lista = [];
     for (let i = 0; i < nuevos.length; i++) {
       lista.push(nuevos[i]);
     }
+    //setArchivos es el estado archivos,prev es un array de archivos que ya existia antes en el estado archivos
     setArchivos(function(prev) {
       return prev.concat(lista);
     });
   }
 
+  //Manejadores que llaman a la funcion agregarArchivos para meter el archivo o carpeta dentro, resetea el evento a ""
   function handleSeleccionArchivos(e) {
     agregarArchivos(e.target.files);
     e.target.value = '';
   }
-
   function handleSeleccionCarpeta(e) {
     agregarArchivos(e.target.files);
     e.target.value = '';
   }
 
+  //Manejador que elimina un archivo en la constante lista segun el indice de un archivo
   function handleEliminarArchivo(indice) {
     setArchivos(function(prev) {
       const nueva = [];
@@ -54,8 +59,9 @@ export default function AgregarProyecto() {
     });
   }
 
+  //Manejadores para la funcionalidad de arrastrar y soltar archivos
   function handleDragOver(e) {
-    e.preventDefault();
+    e.preventDefault(); //e.preventsDefault detiene un comportamiento automatico como no permitir arrastrar cosas al dom 
     setArrastrandoSobre(true);
   }
 
@@ -66,11 +72,12 @@ export default function AgregarProyecto() {
   function handleDrop(e) {
     e.preventDefault();
     setArrastrandoSobre(false);
-    agregarArchivos(e.dataTransfer.files);
+    agregarArchivos(e.dataTransfer.files); //Metemos en esa constante lista[], los archivos que hemos cargado, ojo, e.dataTransfer.files solo contiene metadatos del archivo, esos metadatos los usamos luego en la llamada a la API para saber donde esta el archivo en el disco
   }
 
+
   function handleSubmit(e) {
-    e.preventDefault();
+    e.preventDefault(); //Aqui usamos .preventDefault para que no se recargue la pagina al enviar el formulario
 
     // TODO: reemplazar con llamada real al backend
     // const formData = new FormData();
@@ -94,6 +101,7 @@ export default function AgregarProyecto() {
     navigate('/proyectos');
   }
 
+  //Contruye en el dom los archivos cargados por el usuario y los muestra en el DOM
   const listaArchivos = [];
   for (let i = 0; i < archivos.length; i++) {
     const indice = i;
@@ -111,6 +119,7 @@ export default function AgregarProyecto() {
     );
   }
 
+  //Cambia el estilo de el panel de archivos al arrastrar un archivo en el
   let zonaClass = styles.zonaSubida;
   if (arrastrandoSobre) {
     zonaClass = zonaClass + ' ' + styles.zonaSubidaActiva;
@@ -151,8 +160,10 @@ export default function AgregarProyecto() {
             />
           </div>
 
+          {/*Bloque de codigo perteneciente a la subida de archivos */}
           <div className={styles.field}>
             <label className={styles.label}>Archivos</label>
+            {/*Este div escucha los eventos de arrastrar y cambia su estilo dependiento */}
             <div
               className={zonaClass}
               onDragOver={handleDragOver}
@@ -171,11 +182,12 @@ export default function AgregarProyecto() {
               </div>
             </div>
 
+            {/*EStos input son necesarios para que se abra el explorador de archivos, nota como arriba, al hacer click en los botones, llamamos a inputArchivosRef.current.click(), llamamos a la referencia de estos inputs */}
             <input
               ref={inputArchivosRef}
               type="file"
               multiple
-              style={{ display: 'none' }}
+              style={{ display: 'none' }} //Display:none quiere decir que no salen en el dom, estan "escondidos"
               onChange={handleSeleccionArchivos}
             />
             <input
@@ -187,13 +199,15 @@ export default function AgregarProyecto() {
               onChange={handleSeleccionCarpeta}
             />
 
+            {/*Renderizamos el array listaArchivos que contruimos antes en el for, solo si el estado archivos contiene al menos 1 archivo */}
             {archivos.length > 0 && (
               <div className={styles.listaArchivos}>
                 {listaArchivos}
               </div>
             )}
           </div>
-
+          {/*Fin del bloque perteneciente a la subida de archivos */}
+          
           <button type="submit" className={styles.button}>
             Crear proyecto
           </button>
