@@ -20,7 +20,6 @@ AppWeb/BACKEND/Logs/
 AppWeb/BACKEND/Cache/
 
 
-
 ###FRONTEND###
 
 # Dependencies
@@ -84,3 +83,7 @@ temp/
 *.pid
 *.seed
 *.pid.lock
+
+
+###OTRO###
+CosasAntesDeProduccion.txt
