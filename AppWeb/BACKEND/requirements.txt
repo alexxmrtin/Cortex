@@ -9,3 +9,8 @@ aiofiles==24.1.0 #Leer y escribir archivos de forma asincrona
 email-validator==2.2.0 #Validar que un email tiene formato correcto
 
 #Dependencias del backend
+
+#---CLASES BASE---
+#Base (SQLAlchemy)       -> Clase de la que heredan todos los modelos. Le dice a SQLAlchemy que esa clase es una tabla de la BD
+#BaseModel (Pydantic)    -> Clase de la que heredan todos los schemas. Aporta validacion, conversion y serializacion a JSON automaticamente
+#BaseSettings (Pydantic) -> Clase de la que hereda Settings en config.py. Lee el .env y rellena los atributos automaticamente
