@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import styles from '../styles/Login.module.css';
+import apiClient from '../services/api'
 
 export default function Register() {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   function handleNameChange(e) {
     setName(e.target.value);
   }
 
   function handleEmailChange(e) {
-    setEmail(e.target.value);
+    setCorreo(e.target.value);
   }
 
   function handlePasswordChange(e) {
@@ -24,9 +28,26 @@ export default function Register() {
     setConfirmPassword(e.target.value);
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // Lógica de registro pendiente
+    setError('');
+    
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    try {
+      const respuesta = await apiClient.post('/usuarios/registro',{
+        nombreUsuario : name,
+        email : correo,
+        contrasena : password
+      })
+      navigate('/')
+    }
+    catch (e){
+      setError(e.response?.data?.detail || 'Error al registrarse');
+    }
   }
 
   return (
@@ -53,13 +74,13 @@ export default function Register() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Correo electrónico</label>
+            <label className={styles.label} htmlFor="correo">Correo electrónico</label>
             <input
-              id="email"
-              type="email"
+              id="correo"
+              type="correo"
               className={styles.input}
-              placeholder="correo@ejemplo.com"
-              value={email}
+              placeholder="email@ejemplo.com"
+              value={correo}
               onChange={handleEmailChange}
             />
           </div>
@@ -87,6 +108,8 @@ export default function Register() {
               onChange={handleConfirmPasswordChange}
             />
           </div>
+
+          {error && <p className={styles.error}>{error}</p>}
 
           <button type="submit" className={styles.button}>
             Crear cuenta

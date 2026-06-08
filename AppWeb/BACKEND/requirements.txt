@@ -3,6 +3,7 @@ uvicorn[standard]==0.32.1 #Servidor que ejecuta FastAPI
 sqlalchemy==2.0.36 #ORM para hablar con la base de datos
 python-jose[cryptography]==3.3.0 #Crear y validar tokens JWT
 passlib[bcrypt]==1.7.4 #Hashear contraseñas
+bcrypt==4.0.1 #Version especifica por incompatibilidad con passlib en versiones superiores
 python-multipart==0.0.12 #recibir forumularios y subidas de archivos
 pydantic-settings==2.6.1 #Leer variables de entorno desde el .env con tipado
 aiofiles==24.1.0 #Leer y escribir archivos de forma asincrona

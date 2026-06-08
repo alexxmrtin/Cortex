@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Login.module.css';
+import apiClient from '../services/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   function handleEmailChange(e) {
     setEmail(e.target.value);
@@ -14,10 +18,25 @@ export default function Login() {
     setPassword(e.target.value);
   }
 
-  function handleSubmit(e) {
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    // Lógica de login pendiente
+    setError('');
+
+    try {
+      const respuesta = await apiClient.post('/usuarios/login', {
+        email: email,
+        contrasena: password
+      });
+
+      localStorage.setItem('authToken', respuesta.data.access_token); //Guarda el token JWT al iniciar sesion en localStorage del navegador
+      navigate('/');
+
+    } catch(e) {
+      setError(e.response?.data?.detail || 'Error al iniciar sesión');
+    }
   }
+
 
   return (
     <div className={styles.page}>
@@ -53,6 +72,8 @@ export default function Login() {
               onChange={handlePasswordChange}
             />
           </div>
+
+          {error && <p className={styles.error}>{error}</p>}
 
           <button type="submit" className={styles.button}>
             Iniciar sesión
