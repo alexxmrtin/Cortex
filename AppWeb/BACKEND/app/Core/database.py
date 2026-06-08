@@ -13,12 +13,3 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Clase base de la que heredaran todos los modelos, todas las clases heredaran de esta para que asi SQLAlchemy sepa que es una entidad de la base de datos
 class Base(DeclarativeBase):
     pass
-
-
-# Funcion que abre una sesion, la cede y la cierra al terminar la peticion
-def get_db():
-    db = SessionLocal() #Abre una sesion en la bd
-    try:
-        yield db #le cede el control al controlador/modelo que ha llamado a esta funcion
-    finally:
-        db.close() #Cierra la sesion en la bd

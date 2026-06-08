@@ -1,3 +1,5 @@
 Schemas de Pydantic. Definen qué datos entran y salen de la API.
 Validan automáticamente el body de las peticiones y dan forma a las respuestas.
 No son las tablas de la BD (eso son los Models), son los datos que viajan por HTTP.
+
+Es basicamente para tipado, definimos una estructura y en el router las utilizamos para tipar los datos que entran en las funciones
