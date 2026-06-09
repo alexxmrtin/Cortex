@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Home.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
 import apiClient from '../services/api';
@@ -188,10 +188,10 @@ function ListaServiciosActivos(servicios) {
   );
 }
 
-
 export default function Home() {
   const token = localStorage.getItem('authToken');
-  
+  const navigate = useNavigate();
+
   const [usuario, setUsuario] = useState(null);
   const [servicios, setServicios] = useState(null);
   const [proyectos, setProyectos] = useState(null);
@@ -222,6 +222,10 @@ export default function Home() {
     cargarProyectos();
   }, []);
 
+  function cerrarSesion(){
+    localStorage.removeItem('authToken');
+    window.location.href = '/';
+  }
 
   //VISTA DE USUARIO LOGEADO
   if (token) {
@@ -265,7 +269,7 @@ export default function Home() {
         <main className={styles.main}>
           <section className={styles.hero}>
             <h1>Bienvenido, {usuario ? usuario.nombreUsuario.split(' ')[0] : ''}</h1> 
-            <Link to="/">Cerrar Sesión</Link>
+            <button onClick={cerrarSesion} className={styles.loginBtn}>Cerrar Sesión</button>
           </section>
           
           <section className={styles.hero2}>
@@ -345,7 +349,7 @@ export default function Home() {
             <h1>Bienvenido a Cortex!</h1>
           </section>
 
-          <Link to="/login" className={styles.loginBtn}>Iniciar sesión</Link>
+          <Link to="/login" className={styles.loginBtnGrande}>Iniciar sesión</Link>
         </main>
 
         <div className={styles.home}>

@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   padding: 0;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .hero h1 {
@@ -368,16 +368,33 @@
 }
 
 .loginBtn {
-  padding: 0.45rem 1rem;
+  padding: 0.2rem 0.2rem;
   background-color: #000000c4;
   color: white;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
+  border: none;
+  cursor: pointer;
   transition: background 0.2s;
 }
 
 .loginBtn:hover {
+  background-color: #000000;
+}
+
+.loginBtnGrande {
+  padding: 0.6rem 1.2rem;
+  background-color: #000000c4;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.loginBtnGrande:hover {
   background-color: #000000;
 }
