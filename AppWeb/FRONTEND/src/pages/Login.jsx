@@ -32,8 +32,8 @@ export default function Login() {
       localStorage.setItem('authToken', respuesta.data.access_token); //Guarda el token JWT al iniciar sesion en localStorage del navegador
       navigate('/');
 
-    } catch(e) {
-      setError(e.response?.data?.detail || 'Error al iniciar sesión');
+    } catch(err) {
+      setError(err.response?.data?.detail || 'Error al iniciar sesión');
     }
   }
 

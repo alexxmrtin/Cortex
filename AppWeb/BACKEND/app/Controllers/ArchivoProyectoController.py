@@ -19,7 +19,7 @@ router = APIRouter()
 # POST   /archivos/proyecto/{proyecto_id}    → Sube un archivo al proyecto
 # DELETE /archivos/{archivo_id}              → Elimina un archivo del proyecto
 
-STORAGE_BASE = "Storage"  # Carpeta raiz: Storage/{usuario_id}/{proyecto_id}/
+STORAGE_BASE = "Storage/ArchivosUsuarios"  # Carpeta raiz: Storage/{usuario_id}/{proyecto_id}/
 
 
 

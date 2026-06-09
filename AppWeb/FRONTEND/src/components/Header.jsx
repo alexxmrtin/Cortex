@@ -1,9 +1,26 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from '../styles/Header.module.css';
-import perfilImg from '../assets/perfilNoDefinido.jpg';
+import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
+import apiClient from '../services/api';
 
 export default function Header() {
   const location = useLocation();
+  const token = localStorage.getItem('authToken');
+  const [fotoPerfil, setFotoPerfil] = useState(perfilNoDefinido);
+
+
+  useEffect(function() {
+    if (!token) return;
+    
+    async function cargarFoto() {
+      const respuesta = await apiClient.get('/usuarios/me');
+      const url = respuesta.data.fotoPerfil;
+      if (url) setFotoPerfil(`${import.meta.env.VITE_API_URL}${url}`);
+    }
+    cargarFoto();
+  }, []);
+
 
   let headerClass = styles.header;
   if (location.pathname !== '/') {
@@ -19,7 +36,7 @@ export default function Header() {
         <nav className={styles.nav}>
           <Link to="/">Inicio</Link>
           <Link to="/ajustes">Ajustes</Link>
-          <img src={perfilImg} alt="Perfil" className={styles.profileImg}/>
+          <img src={fotoPerfil} alt="Perfil" className={styles.profileImg}/>
         </nav>
       </div>
     </header>

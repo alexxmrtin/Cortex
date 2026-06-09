@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.Core.database import engine, Base  # engine es la conexion a la BD, Base es la clase de la que heredan los modelos
 from app.MiddleWares.CORS import configurar_cors
 import app.Models  # Importa todos los modelos para que SQLAlchemy los registre antes de crear las tablas
@@ -18,6 +19,9 @@ configurar_cors(app)
 
 # Crear las tablas en la BD al arrancar si no existen
 Base.metadata.create_all(bind=engine)
+
+# Exponer la carpeta Storage como archivos estáticos accesibles desde /storage
+app.mount("/storage", StaticFiles(directory="Storage"), name="storage")
 
 # Registrar los routers con sus prefijos de URL
 app.include_router(usuario_router, prefix="/usuarios")

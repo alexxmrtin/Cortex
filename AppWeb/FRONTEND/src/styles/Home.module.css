@@ -90,6 +90,14 @@
   flex-shrink: 0;
 }
 
+.puntoInactivo {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e53e3e;
+  flex-shrink: 0;
+}
+
 .home{
   display: flex;
   gap: 1.5rem;
@@ -208,6 +216,23 @@
 
 .sidebarDropdownOpen {
   display: flex;
+}
+
+.sidebarDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  color: #666;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebarDropdownItem:hover {
+  background: #f4f4f4;
+  color: #222;
 }
 
 .sidebarItem svg {
@@ -340,4 +365,19 @@
 
 .calendarEmpty {
   visibility: hidden;
+}
+
+.loginBtn {
+  padding: 0.45rem 1rem;
+  background-color: #000000c4;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.loginBtn:hover {
+  background-color: #000000;
 }

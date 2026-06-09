@@ -45,8 +45,8 @@ export default function Register() {
       })
       navigate('/')
     }
-    catch (e){
-      setError(e.response?.data?.detail || 'Error al registrarse');
+    catch (err){
+      setError(err.response?.data?.detail || 'Error al registrarse');
     }
   }
 

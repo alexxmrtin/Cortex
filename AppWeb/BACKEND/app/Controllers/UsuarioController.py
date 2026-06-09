@@ -1,10 +1,14 @@
-from fastapi import APIRouter, HTTPException, Header
+import os
+import aiofiles
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File
 from app.Core.database import SessionLocal
 from app.Models.Usuario import Usuario
 from app.Schemas.UsuarioSchema import UsuarioCrear, UsuarioLogin, UsuarioRespuesta, UsuarioActualizar
 from app.Core.security import hashear_contrasena, verificar_contrasena, crear_token, get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
 from app.Helpers.Validar import validar_contrasena, validar_nombre_usuario
+
+STORAGE_FOTOS = "Storage/FotoPerfilUsuarios"
 
 router = APIRouter()
 
@@ -115,6 +119,32 @@ def actualizar_usuario(datos: UsuarioActualizar, authorization: str = Header(...
     if datos.tema is not None:
         usuario.tema = datos.tema
 
+    db.commit()
+    db.refresh(usuario)
+    db.close()
+
+    return usuario
+
+
+# Estructura que recibe: archivo de imagen (multipart/form-data), token en el header
+@router.post("/me/foto", response_model=UsuarioRespuesta)
+async def subir_foto_perfil(archivo: UploadFile = File(...), authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+
+    carpeta = os.path.join(STORAGE_FOTOS, str(usuario.id))
+    os.makedirs(carpeta, exist_ok=True)
+
+    ruta_disco = os.path.join(carpeta, archivo.filename)
+    async with aiofiles.open(ruta_disco, "wb") as f:
+        contenido = await archivo.read()
+        await f.write(contenido)
+
+    # La URL publica es la ruta relativa desde Storage/, accesible via /storage/...
+    url_publica = ruta_disco.replace("Storage/", "/storage/")
+
+    db = SessionLocal()
+    usuario = db.query(Usuario).filter(Usuario.id == usuario.id).first()
+    usuario.fotoPerfil = url_publica
     db.commit()
     db.refresh(usuario)
     db.close()
