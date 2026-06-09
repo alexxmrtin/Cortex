@@ -13,4 +13,5 @@ class Conversacion(Base):
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="conversaciones")
-    mensajes = relationship("Mensaje", back_populates="conversacion")
+    # cascade="all, delete-orphan" hace que al borrar una conversacion, SQLAlchemy borre automaticamente todos sus mensajes
+    mensajes = relationship("Mensaje", back_populates="conversacion", cascade="all, delete-orphan")

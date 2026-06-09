@@ -13,6 +13,7 @@ class Usuario(Base):
     tema = Column(String, default="claro")
 
     # Relaciones con otras tablas
-    proyectos = relationship("Proyecto", back_populates="usuario")
-    servicios = relationship("Servicio", back_populates="usuario")
-    conversaciones = relationship("Conversacion", back_populates="usuario")
+    # cascade="all, delete-orphan" hace que al borrar un usuario, SQLAlchemy borre automaticamente todos sus proyectos, servicios y conversaciones
+    proyectos = relationship("Proyecto", back_populates="usuario", cascade="all, delete-orphan")
+    servicios = relationship("Servicio", back_populates="usuario", cascade="all, delete-orphan")
+    conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")

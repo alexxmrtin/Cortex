@@ -26,3 +26,8 @@ class UsuarioActualizar(BaseModel):
     nombreUsuario: str | None = None #El campo es opcional enviarlo
     fotoPerfil: str | None = None
     tema: str | None = None
+
+# Datos que se reciben para cambiar la contrasena
+class CambiarContrasena(BaseModel):
+    contrasenaActual: str
+    contrasenaNueva: str

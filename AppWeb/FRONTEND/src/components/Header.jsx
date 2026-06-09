@@ -27,18 +27,38 @@ export default function Header() {
     headerClass = headerClass + ' ' + styles.headerBorder;
   }
 
-  return (
-    <header className={headerClass}>
-      <div className={styles.container}>
-        <Link to="/" className={styles.logo}>
-          <h1>Cortex 0.1v</h1>
-        </Link>
-        <nav className={styles.nav}>
-          <Link to="/">Inicio</Link>
-          <Link to="/ajustes">Ajustes</Link>
-          <img src={fotoPerfil} alt="Perfil" className={styles.profileImg}/>
-        </nav>
-      </div>
-    </header>
-  );
+  if (token){
+    return (
+      <header className={headerClass}>
+        <div className={styles.container}>
+          <Link to="/" className={styles.logo}>
+            <h1>Cortex 0.1v</h1>
+          </Link>
+          <nav className={styles.nav}>
+            <Link to="/">Inicio</Link>
+            <Link to="/ajustes">Ajustes</Link>
+            <img src={fotoPerfil} alt="Perfil" className={styles.profileImg}/>
+          </nav>
+        </div>
+      </header>
+    );
+  }
+
+  else{
+    return (
+      <header className={headerClass}>
+        <div className={styles.container}>
+          <Link to="/" className={styles.logo}>
+            <h1>Cortex 0.1v</h1>
+          </Link>
+          <nav className={styles.nav}>
+            <Link to="/">Inicio</Link>
+            <Link to="/login">Ajustes</Link>
+            <img src={fotoPerfil} alt="Perfil" className={styles.profileImg}/>
+          </nav>
+        </div>
+      </header>
+    );
+  }
+  
 }

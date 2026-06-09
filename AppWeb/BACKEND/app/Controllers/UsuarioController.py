@@ -1,9 +1,10 @@
 import os
+import shutil
 import aiofiles
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File
 from app.Core.database import SessionLocal
 from app.Models.Usuario import Usuario
-from app.Schemas.UsuarioSchema import UsuarioCrear, UsuarioLogin, UsuarioRespuesta, UsuarioActualizar
+from app.Schemas.UsuarioSchema import UsuarioCrear, UsuarioLogin, UsuarioRespuesta, UsuarioActualizar, CambiarContrasena
 from app.Core.security import hashear_contrasena, verificar_contrasena, crear_token, get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
 from app.Helpers.Validar import validar_contrasena, validar_nombre_usuario
@@ -12,11 +13,12 @@ STORAGE_FOTOS = "Storage/FotoPerfilUsuarios"
 
 router = APIRouter()
 
-# POST   /usuarios/registro     → Registra un nuevo usuario
-# POST   /usuarios/login        → Inicia sesion y devuelve el token JWT
-# GET    /usuarios/me           → Devuelve los datos del usuario autenticado
-# PATCH  /usuarios/me           → Actualiza los datos del usuario autenticado
-# DELETE /usuarios/me           → Elimina la cuenta del usuario autenticado
+# POST   /usuarios/registro          → Registra un nuevo usuario
+# POST   /usuarios/login             → Inicia sesion y devuelve el token JWT
+# GET    /usuarios/me                → Devuelve los datos del usuario autenticado
+# PATCH  /usuarios/me                → Actualiza los datos del usuario autenticado
+# PATCH  /usuarios/me/contrasena     → Cambia la contrasena del usuario autenticado
+# DELETE /usuarios/me                → Elimina la cuenta del usuario autenticado
 
 
 # Estructura que recibe: datos = { "nombreUsuario": str, "email": str, "contrasena": str }
@@ -125,6 +127,26 @@ def actualizar_usuario(datos: UsuarioActualizar, authorization: str = Header(...
 
     return usuario
 
+# Este endpoint debe recibir la contrasena actual y la contrasena que quiere cambiar, si la contrasena actual es correcta, se cambia
+# Estructura que recibe: datos = { "contrasenaActual": str, "contrasenaNueva": str }
+@router.patch("/me/contrasena")
+def cambiar_contrasena(datos: CambiarContrasena, authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+
+    if not verificar_contrasena(datos.contrasenaActual, usuario.contrasena):
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+
+    if not validar_contrasena(datos.contrasenaNueva):
+        raise HTTPException(status_code=400, detail="La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula y un número")
+
+    db = SessionLocal()
+    usuario = db.query(Usuario).filter(Usuario.id == usuario.id).first()
+    usuario.contrasena = hashear_contrasena(datos.contrasenaNueva)
+    db.commit()
+    db.close()
+
+    return {"mensaje": "Contraseña actualizada correctamente"}
+
 
 # Estructura que recibe: archivo de imagen (multipart/form-data), token en el header
 @router.post("/me/foto", response_model=UsuarioRespuesta)
@@ -139,8 +161,7 @@ async def subir_foto_perfil(archivo: UploadFile = File(...), authorization: str 
         contenido = await archivo.read()
         await f.write(contenido)
 
-    # La URL publica es la ruta relativa desde Storage/, accesible via /storage/...
-    url_publica = ruta_disco.replace("Storage/", "/storage/")
+    url_publica = f"/storage/FotoPerfilUsuarios/{usuario.id}/{archivo.filename}"
 
     db = SessionLocal()
     usuario = db.query(Usuario).filter(Usuario.id == usuario.id).first()
@@ -157,9 +178,13 @@ async def subir_foto_perfil(archivo: UploadFile = File(...), authorization: str 
 def eliminar_usuario(authorization: str = Header(...)):
     usuario = get_usuario_del_token(authorization)
 
+    #Al borrar un usuario, tenemos que borrar todos los archivos en disco, eso incluye la foto de perfil(lo demas lo borramos con cascade de sqlalchemy)
+    carpeta_foto = os.path.join(STORAGE_FOTOS, str(usuario.id))
+    if os.path.exists(carpeta_foto):
+        shutil.rmtree(carpeta_foto)
+
     db = SessionLocal()
     usuario = db.query(Usuario).filter(Usuario.id == usuario.id).first()
-
     db.delete(usuario)
     db.commit()
     db.close()

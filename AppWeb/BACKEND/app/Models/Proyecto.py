@@ -14,4 +14,5 @@ class Proyecto(Base):
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="proyectos")
-    archivos = relationship("ArchivosProyecto", back_populates="proyecto")
+    # cascade="all, delete-orphan" hace que al borrar un proyecto, SQLAlchemy borre automaticamente todos sus archivos
+    archivos = relationship("ArchivosProyecto", back_populates="proyecto", cascade="all, delete-orphan")

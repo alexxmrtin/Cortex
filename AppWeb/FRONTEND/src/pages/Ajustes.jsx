@@ -1,23 +1,92 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Ajustes.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
+import apiClient from '../services/api';
 
 const SECCIONES = ['Perfil', 'Seguridad', 'Apariencia', 'Cuenta'];
 
-function SeccionPerfil() {
-  const [nombre, setNombre] = useState('Usuario');
-  const [email, setEmail] = useState('usuario@cortex.com');
 
+//SECCION PERFIL
+function SeccionPerfil({ usuario }) {
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  
+  const [fotoPerfil, setFotoPerfil] = useState(perfilNoDefinido);
+  const [archivoFoto, setArchivoFoto] = useState(null);
+  const [errorFoto, setErrorFoto] = useState('');
+  const [error, setError] = useState('');
+  const inputFoto = useRef(null);
+
+  useEffect(function() {
+    if (usuario) {
+      setNombre(usuario.nombreUsuario);
+      setEmail(usuario.email);
+      if (usuario.fotoPerfil) {
+        setFotoPerfil(`${import.meta.env.VITE_API_URL}${usuario.fotoPerfil}`);
+      }
+    }
+  }, [usuario]);
+
+
+  //e es el evento que pasa cuando se ejecuta el evento onChange
+  async function handleCambiarFoto(e) {
+    const archivo = e.target.files[0]; //Variable que guarda los archivos seleccionados, guartda solo el primer archivo
+    if (!archivo) return;
+
+    //Validamos que el archivo sea de menos de 2mb
+    if (archivo.size > 2 * 1024 * 1024) {
+      setErrorFoto('La imagen no puede superar 2MB');
+      return;
+    }
+    setErrorFoto(''); //Necesario reiterar aqui para que no salte el error si el usuario elige otra imagen
+
+    setArchivoFoto(archivo);
+    setFotoPerfil(URL.createObjectURL(archivo)); //Genera una URL temporal local (blob:) que apunta al archivo en memoria, sin subirlo al servidor
+  }
+
+  //Cuando el usuario confirma, ya subimos la imagen y demas al servidor
+  async function handleSubmit() {
+    
+    if (archivoFoto) {
+      const formData = new FormData();
+      formData.append('archivo', archivoFoto);
+      
+      await apiClient.post('/usuarios/me/foto', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    
+    try {
+      await apiClient.patch('/usuarios/me', { nombreUsuario: nombre, email: email });
+      setError('');
+    } catch (error) {
+      setError(error.response.data.detail);
+    }
+  }
+
+
+  //Hay un input oculto al que apunta la ref inputFoto, cuando es input recibe un archivo del usuario, se ejecuta la funcion handleCambiarFoto
   return (
     <div className={styles.seccion}>
       <h2 className={styles.seccionTitulo}>Perfil</h2>
       <p className={styles.seccionDesc}>Información visible de tu cuenta.</p>
 
       <div className={styles.avatarFila}>
-        <img src={perfilNoDefinido} alt="Avatar" className={styles.avatar} />
+        <img src={fotoPerfil} alt="Avatar" className={styles.avatar} />
         <div className={styles.avatarInfo}>
-          <button className={styles.botonSecundario}>Cambiar foto</button>
+          <input
+            ref={inputFoto}
+            type="file"
+            accept="image/jpeg,image/png"
+            style={{ display: 'none' }}
+            onChange={handleCambiarFoto}
+          />
+          <button className={styles.botonSecundario} onClick={function() { inputFoto.current.click(); }}>
+            Cambiar foto
+          </button>
           <span className={styles.avatarHint}>JPG o PNG, máx. 2MB</span>
+          {errorFoto && <span className={styles.errorTexto}>{errorFoto}</span>}
         </div>
       </div>
 
@@ -41,20 +110,38 @@ function SeccionPerfil() {
         />
       </div>
 
-      <button className={styles.botonPrimario}>Guardar cambios</button>
+      {error && <span className={styles.errorTexto}>{error}</span>}
+      <button onClick={handleSubmit} className={styles.botonPrimario}>Guardar cambios</button>
     </div>
   );
 }
 
+
+//SECCION SEGURIDAD
 function SeccionSeguridad() {
   const [actual, setActual] = useState('');
   const [nueva, setNueva] = useState('');
   const [confirmar, setConfirmar] = useState('');
+  const [error, setError] = useState('');
+
+  async function handleSubmit(){
+    if (nueva !== confirmar){
+      setError('Las contraseñas deben ser iguales');
+      return;
+    }
+    setError('');
+    
+    try {
+      await apiClient.patch('/usuarios/me/contrasena', { contrasenaActual: actual, contrasenaNueva: nueva });
+    } catch (error) {
+      setError(error.response.data.detail);
+    }
+  }
 
   return (
     <div className={styles.seccion}>
       <h2 className={styles.seccionTitulo}>Seguridad</h2>
-      <p className={styles.seccionDesc}>Gestiona tu contraseña y sesiones activas.</p>
+      <p className={styles.seccionDesc}>Gestiona tu contraseña.</p>
 
       <div className={styles.card}>
         <h3 className={styles.cardTitulo}>Cambiar contraseña</h3>
@@ -67,6 +154,7 @@ function SeccionSeguridad() {
             onChange={function(e) { setActual(e.target.value); }}
           />
         </div>
+        <hr className={styles.separador} />
         <div className={styles.campo}>
           <label className={styles.label}>Nueva contraseña</label>
           <input
@@ -85,20 +173,27 @@ function SeccionSeguridad() {
             onChange={function(e) { setConfirmar(e.target.value); }}
           />
         </div>
-        <button className={styles.botonPrimario}>Actualizar contraseña</button>
-      </div>
-
-      <div className={styles.card}>
-        <h3 className={styles.cardTitulo}>Sesiones</h3>
-        <p className={styles.cardDesc}>Cierra tu sesión en todos los dispositivos donde hayas iniciado sesión.</p>
-        <button className={styles.botonSecundario}>Cerrar todas las sesiones</button>
+        {error && <span className={styles.errorTexto}>{error}</span>}
+        <button onClick={handleSubmit} className={styles.botonPrimario}>Actualizar contraseña</button>
       </div>
     </div>
   );
 }
 
-function SeccionApariencia() {
+
+//SECCION APARIENCIA
+function SeccionApariencia({usuario}) {
   const [tema, setTema] = useState('claro');
+
+  async function handleTema(nuevoTema){
+    if (nuevoTema === 'claro') {
+      await apiClient.patch('/usuarios/me', { tema: 'claro' });
+    } else {
+      await apiClient.patch('/usuarios/me', { tema: 'oscuro' });
+    }
+    setTema(nuevoTema);
+  }
+
 
   return (
     <div className={styles.seccion}>
@@ -110,7 +205,7 @@ function SeccionApariencia() {
         <div className={styles.temaOpciones}>
           <button
             className={tema === 'claro' ? styles.temaBotonActivo : styles.temaBoton}
-            onClick={function() { setTema('claro'); }}
+            onClick={function() { handleTema('claro'); }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
@@ -122,7 +217,7 @@ function SeccionApariencia() {
           </button>
           <button
             className={tema === 'oscuro' ? styles.temaBotonActivo : styles.temaBoton}
-            onClick={function() { setTema('oscuro'); }}
+            onClick={function() { handleTema('oscuro'); }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -135,9 +230,19 @@ function SeccionApariencia() {
   );
 }
 
+
+//SECCION CUENTA
 function SeccionCuenta() {
   const [confirmar, setConfirmar] = useState(false);
+  const navigate = useNavigate();
 
+  async function handleEliminarCuenta() {
+    await apiClient.delete('/usuarios/me');
+    localStorage.removeItem('authToken');
+    navigate('/');
+  }
+
+  //Seteamos el estado confirmar a false, cuando se renderiza esta en false por tanto se renderiza la primera parte del if (es un if comprimido), si clickamos hacemos que el estado confirmar sea true, por lo que al renderizar de nuevo, se va al else y renderiza un html distinto,si pulsamos confirmar ya es cuando llamamos a la API
   return (
     <div className={styles.seccion}>
       <h2 className={styles.seccionTitulo}>Cuenta</h2>
@@ -156,7 +261,9 @@ function SeccionCuenta() {
           <div className={styles.confirmacion}>
             <p className={styles.confirmacionTexto}>¿Estás seguro? Esta acción no se puede deshacer.</p>
             <div className={styles.confirmacionBotones}>
-              <button className={styles.botonPeligro}>Confirmar eliminación</button>
+              <button className={styles.botonPeligro} onClick={handleEliminarCuenta}>
+                Confirmar eliminación
+              </button>
               <button className={styles.botonSecundario} onClick={function() { setConfirmar(false); }}>
                 Cancelar
               </button>
@@ -168,25 +275,56 @@ function SeccionCuenta() {
   );
 }
 
+//FUNCION PRINCIPAL
 export default function Ajustes() {
   const [seccionActiva, setSeccionActiva] = useState('Perfil');
 
+  const token = localStorage.getItem('authToken');
+  const navigate = useNavigate();
+  const [usuario, setUsuario] = useState(null);
+
+  useEffect(function() {
+    if (!token) return;
+    
+    async function cargarUsuario() {
+      const respuesta = await apiClient.get('/usuarios/me');
+      setUsuario(respuesta.data);
+    }
+    cargarUsuario();
+  }, []);
+
+
+  //usuario no esta contenida fuera de Ajustes() por lo que se lo tenemos que pasar a todos los componentes para que puedan usarlo
   const contenido = {
-    'Perfil':     <SeccionPerfil />,
+    'Perfil':     <SeccionPerfil usuario={usuario} />,
     'Seguridad':  <SeccionSeguridad />,
-    'Apariencia': <SeccionApariencia />,
-    'Cuenta':     <SeccionCuenta />,
+    'Apariencia': <SeccionApariencia usuario={usuario} />,
+    'Cuenta':     <SeccionCuenta usuario={usuario} />,
   };
 
-  return (
+  //Esto es hace para que no puedas entrar a la url sin token, el usuario puede poner /ajustes y entrar aunque no este logeado
+  if (!token) {
+    navigate('/');
+    return null;
+  }
+  if (token){
+    return (
     <div className={styles.page}>
       <aside className={styles.nav}>
         <p className={styles.navTitulo}>Ajustes</p>
         {SECCIONES.map(function(s) {
+          let claseBoton;
+          
+          if (seccionActiva === s) {
+            claseBoton = styles.navItemActivo;
+          } 
+          else {
+            claseBoton = styles.navItem;
+          }
           return (
             <button
               key={s}
-              className={seccionActiva === s ? styles.navItemActivo : styles.navItem}
+              className={claseBoton}
               onClick={function() { setSeccionActiva(s); }}
             >
               {s}
@@ -200,4 +338,5 @@ export default function Ajustes() {
       </main>
     </div>
   );
+  }
 }
