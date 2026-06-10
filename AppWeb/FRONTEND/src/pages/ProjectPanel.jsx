@@ -1,43 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from '../styles/ProjectPanel.module.css';
+import apiClient from '../services/api';
 
-// TODO: reemplazar con datos reales del backend (GET /api/proyectos/:id)
-const datosDePrueba = {
-  1: {
-    nombre: 'Proyecto 1',
-    archivos: [
-      { nombre: 'src', tipo: 'carpeta', contenido: [
-        { nombre: 'index.js', tipo: 'archivo' },
-        { nombre: 'App.js', tipo: 'archivo' },
-      ]},
-      { nombre: 'public', tipo: 'carpeta', contenido: [
-        { nombre: 'index.html', tipo: 'archivo' },
-      ]},
-      { nombre: 'README.md', tipo: 'archivo' },
-      { nombre: 'package.json', tipo: 'archivo' },
-    ],
-    descripcion: '',
-  },
-  2: {
-    nombre: 'Proyecto 2',
-    archivos: [
-      { nombre: 'main.py', tipo: 'archivo' },
-      { nombre: 'requirements.txt', tipo: 'archivo' },
-    ],
-    descripcion: '',
-  },
-  3: {
-    nombre: 'Proyecto 3',
-    archivos: [
-      { nombre: 'docs', tipo: 'carpeta', contenido: [
-        { nombre: 'guia.md', tipo: 'archivo' },
-      ]},
-      { nombre: 'index.html', tipo: 'archivo' },
-    ],
-    descripcion: '',
-  },
-};
+
+// Recibe una lista plana de archivos [{rutaRelativa: "src/components/App.jsx", ...}, ...]
+// y devuelve un arbol de nodos {nombre, tipo, contenido} que FilaArchivo sabe renderizar.
+// Para cada archivo, divide su rutaRelativa por "/" y va creando carpetas en el arbol
+// si no existen todavia, hasta llegar al ultimo segmento que es el archivo.
+function construirArbol(archivosPlanos) {
+  const raiz = [];
+
+  for (let i = 0; i < archivosPlanos.length; i++) {
+    const partes = archivosPlanos[i].rutaRelativa.split('/');
+    let nivelActual = raiz;
+
+    // Recorremos todas las partes menos la ultima, que es el nombre del archivo
+    for (let j = 0; j < partes.length - 1; j++) {
+      const nombreCarpeta = partes[j];
+
+      // Buscamos si ya existe una carpeta con ese nombre en el nivel actual
+      let carpeta = null;
+      for (let k = 0; k < nivelActual.length; k++) {
+        if (nivelActual[k].nombre === nombreCarpeta && nivelActual[k].tipo === 'carpeta') {
+          carpeta = nivelActual[k];
+          break;
+        }
+      }
+
+      // Si no existe la creamos y la añadimos al nivel actual
+      if (!carpeta) {
+        carpeta = { nombre: nombreCarpeta, tipo: 'carpeta', contenido: [] };
+        nivelActual.push(carpeta);
+      }
+
+      nivelActual = carpeta.contenido; // Bajamos un nivel
+    }
+
+    // La ultima parte del array es el archivo
+    nivelActual.push({ nombre: partes[partes.length - 1], tipo: 'archivo' });
+  }
+
+  // Ordena recursivamente cada nivel poniendo carpetas antes que archivos
+  function ordenarNivel(nodos) {
+    nodos.sort(function(a, b) {
+      if (a.tipo === 'carpeta' && b.tipo === 'archivo') return -1;
+      if (a.tipo === 'archivo' && b.tipo === 'carpeta') return 1;
+      return 0;
+    });
+    for (let i = 0; i < nodos.length; i++) {
+      if (nodos[i].tipo === 'carpeta') {
+        ordenarNivel(nodos[i].contenido);
+      }
+    }
+  }
+
+  ordenarNivel(raiz);
+  return raiz;
+}
+
 
 function IconoCarpeta() {
   return (
@@ -67,7 +88,7 @@ function FilaArchivo({ item, nivel }) {
     if(item.tipo == 'archivo'){
       //Pendiente de implementar, quiero que se muestre el archivo, ya sea codigo o texto
     }
-    
+
     if (item.tipo === 'carpeta') {
       if (abierto) {
         setAbierto(false);
@@ -106,15 +127,38 @@ function FilaArchivo({ item, nivel }) {
   );
 }
 
+
 export default function ProjectPanel() {
   const { id } = useParams(); //leemos el :id de la URL para saber el id del proyecto estamos renderizando
-  const proyecto = datosDePrueba[id]; //Cojemos el proyecto del array usando su id, esto luego cuando crremos la API tiene que ser modificado
-
+  const [proyecto, setProyecto] = useState(null);
+  const [arbol, setArbol] = useState([]);
   const [descripcion, setDescripcion] = useState('');
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(function() {
+    async function cargarDatos() {
+      // Promise.all lanza las dos peticiones a la vez en paralelo y espera a que ambas terminen,
+      // es mas rapido que hacerlas una detras de otra con dos awaits seguidos
+      const [respProyecto, respArchivos] = await Promise.all([
+        apiClient.get('/proyectos/' + id),
+        apiClient.get('/archivos/proyecto/' + id)
+      ]);
+      setProyecto(respProyecto.data);
+      setDescripcion(respProyecto.data.descripcion || '');
+      setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana y obtenemos el arbol
+      setCargando(false);
+    }
+    cargarDatos();
+  }, [id]); // Se vuelve a ejecutar cuando el usuario navega a otro proyecto
+
 
   //Esta funcion es muy importante, vamos a tener que escribir en la base de datos usando la API para dejar la descripcion puesta
   function handleDescripcionChange(e) {
     setDescripcion(e.target.value);
+  }
+
+  if (cargando) {
+    return <p className={styles.noEncontrado}>Cargando...</p>;
   }
 
   if (!proyecto) {
@@ -122,15 +166,15 @@ export default function ProjectPanel() {
   }
 
   const filas = [];
-  for (let i = 0; i < proyecto.archivos.length; i++) {
+  for (let i = 0; i < arbol.length; i++) {
     filas.push(
-      <FilaArchivo key={proyecto.archivos[i].nombre} item={proyecto.archivos[i]} nivel={0} />
+      <FilaArchivo key={arbol[i].nombre} item={arbol[i]} nivel={0} />
     );
   }
 
   return (
     <div className={styles.panel}>
-      <h2 className={styles.titulo}>{proyecto.nombre}</h2>
+      <h2 className={styles.titulo}>{proyecto.nombreproyecto}</h2>
 
       <div className={styles.explorador}>
         <div className={styles.exploradorHeader}>

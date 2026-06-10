@@ -42,7 +42,7 @@ def crear_proyecto(datos: ProyectoCrear, authorization: str = Header(...)):
         raise HTTPException(status_code=400, detail=str(e)) #Mensaje que recibe el frontend: "El valor contiene caracteres no permitidos"
 
     proyecto = Proyecto(
-        nombre=nombreProyecto,
+        nombreproyecto=nombreProyecto,
         descripcion=datos.descripcion,
         usuario_id=usuario.id
     )
@@ -87,7 +87,7 @@ def actualizar_proyecto(proyecto_id: int, datos: ProyectoActualizar, authorizati
     if datos.nombreproyecto is not None:
 
         try:
-            proyecto.nombre = sanitizar(datos.nombreproyecto)
+            proyecto.nombreproyecto = sanitizar(datos.nombreproyecto)
         except ValueError as e:
             db.close()
             raise HTTPException(status_code=400, detail=str(e)) #Mensaje que recibe el frontend: "El valor contiene caracteres no permitidos"

@@ -38,12 +38,19 @@ export default function Register() {
     }
 
     try {
-      const respuesta = await apiClient.post('/usuarios/registro',{
-        nombreUsuario : name,
-        email : correo,
-        contrasena : password
-      })
-      navigate('/')
+      await apiClient.post('/usuarios/registro', {
+        nombreUsuario: name,
+        email: correo,
+        contrasena: password
+      });
+
+      //Al registrarme, me logeo automaticamente
+      const login = await apiClient.post('/usuarios/login', {
+        email: correo,
+        contrasena: password
+      });
+      localStorage.setItem('authToken', login.data.access_token);
+      navigate('/');
     }
     catch (err){
       setError(err.response?.data?.detail || 'Error al registrarse');

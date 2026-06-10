@@ -2,26 +2,33 @@ import { useState, useEffect } from 'react';
 import { Link, Outlet, useParams } from 'react-router-dom';
 import styles from '../styles/Projects.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
+import apiClient from '../services/api';
+
 
 export default function Projects() {
   const [proyectos, setProyectos] = useState([]);
+  const [usuario, setUsuario] = useState(null);
+
   const { id } = useParams(); //useParams lee el :id de la URL actual y la guarda en la variable, lo usamos para construir los links dinamicos de cada proyecto y asignar un estilo diferente al proyecto seleccionado
 
-  //Rellenamos el useState creado anteriormente
+  
   useEffect(function() {
-    // TODO: reemplazar con llamada real al backend
-    // fetch('/api/proyectos', { headers: { Authorization: 'Bearer ' + token } })
-    //   .then(function(res) { return res.json(); })
-    //   .then(function(data) { setProyectos(data); });
+    async function cargarProyectos() {
+      const respuesta = await apiClient.get('/proyectos/');
+      setProyectos(respuesta.data); //respuesta.data es un array de diccionarios, cada diccionario es un proyecto
+    }
+    cargarProyectos();
+  }, [id]); // Se vuelve a ejecutar cuando cambia el id, asi si acabas de crear un proyecto y navegas a el, la lista se recarga
 
-    // Datos de prueba hasta tener el backend
-    const datosDePrueba = [
-      { id: 1, nombre: 'Proyecto 1' },
-      { id: 2, nombre: 'Proyecto 2' },
-      { id: 3, nombre: 'Proyecto 3' },
-    ];
-    setProyectos(datosDePrueba);
-  }, []);
+
+  useEffect(function() {
+    async function cargarUsuario() {
+      const respuesta = await apiClient.get('/usuarios/me');
+      setUsuario(respuesta.data);
+    }
+    cargarUsuario();
+  }, []); // Solo se ejecuta al montar el componente, el usuario no cambia mientras navega entre proyectos
+
 
   //Este bloque construye los links de los proyectos en la sidebar, cada usuario tendra diferentes proyectos
   const itemsProyectos = [];
@@ -32,7 +39,7 @@ export default function Projects() {
     }
     itemsProyectos.push(
       <Link key={proyectos[i].id} to={'/proyectos/' + proyectos[i].id} className={itemClass}>
-        {proyectos[i].nombre}
+        {proyectos[i].nombreproyecto}
       </Link>
     );
   }
@@ -63,9 +70,13 @@ export default function Projects() {
         </nav>
 
         <Link to="/ajustes" className={styles.sidebarUser}>
-          <img src={perfilNoDefinido} alt="perfil" className={styles.sidebarAvatar} />
+          <img
+            src={usuario && usuario.fotoPerfil ? import.meta.env.VITE_API_URL + usuario.fotoPerfil : perfilNoDefinido}
+            alt="perfil"
+            className={styles.sidebarAvatar}
+          />
           <div className={styles.sidebarUserInfo}>
-            <span className={styles.sidebarUserName}>Usuario</span>
+            <span className={styles.sidebarUserName}>{usuario ? usuario.nombreUsuario : '...'}</span>
             <span className={styles.sidebarUserRole}>Miembro</span>
           </div>
         </Link>

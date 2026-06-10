@@ -8,7 +8,7 @@
 .card {
   width: 100%;
   max-width: 480px;
-  min-height: 45rem;
+  min-height: 40rem;
   background: white;
   border-radius: 20px;
   border: 5px solid #c0bfc2;
@@ -16,7 +16,7 @@
   padding: 2rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   padding: auto ;
 }
 
@@ -198,4 +198,11 @@
 
 .archivoEliminar:hover {
   color: #e05555;
+}
+
+.error {
+  font-size: 0.85rem;
+  color: #e53e3e;
+  font-weight: 500;
+  margin: 0;
 }

@@ -11,7 +11,7 @@ class ProyectoRespuesta(BaseModel):
     id: int
     nombreproyecto: str
     descripcion: str | None
-    fechacreacion : datetime
+    fechaCreacion: datetime
     
     model_config = {"from_attributes": True}
 
@@ -19,3 +19,4 @@ class ProyectoRespuesta(BaseModel):
 class ProyectoActualizar(BaseModel):
     nombreproyecto: str | None = None
     descripcion: str | None = None
+

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../styles/AgregarProyecto.module.css';
+import apiClient from '../services/api';
 
 export default function AgregarProyecto() {
   const navigate = useNavigate();
@@ -9,7 +10,8 @@ export default function AgregarProyecto() {
   const [descripcion, setDescripcion] = useState('');
 
   const [archivos, setArchivos] = useState([]); //Aqui se guardan los archivos seleccionados, se inicializan vacios
-  const [arrastrandoSobre, setArrastrandoSobre] = useState(false);  //Estado que permite saber si el usuario esta arrastrando algo sobre un elemento html
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
 
   //Estos refs se van a usar para apuntar a unos <input> lo cuales abren el explorador de archivos o carpetas
   const inputArchivosRef = useRef(null);
@@ -24,17 +26,24 @@ export default function AgregarProyecto() {
     setDescripcion(e.target.value);
   }
 
+
   //Declaramos una constante donde vamos a guardar todos los archivos que queremos subir
+  //Cada elemento del estado es {archivo: File, rutaRelativa: string} en vez de solo File,
+  //asi la ruta queda fijada en el momento de añadir el archivo y no hay que recalcularla despues
   function agregarArchivos(nuevos) {
     const lista = [];
     for (let i = 0; i < nuevos.length; i++) {
-      lista.push(nuevos[i]);
+      lista.push({
+        archivo: nuevos[i],
+        rutaRelativa: nuevos[i].webkitRelativePath || nuevos[i].name
+      });
     }
     //setArchivos es el estado archivos,prev es un array de archivos que ya existia antes en el estado archivos
     setArchivos(function(prev) {
       return prev.concat(lista);
     });
   }
+
 
   //Manejadores que llaman a la funcion agregarArchivos para meter el archivo o carpeta dentro, resetea el evento a ""
   function handleSeleccionArchivos(e) {
@@ -45,6 +54,7 @@ export default function AgregarProyecto() {
     agregarArchivos(e.target.files);
     e.target.value = '';
   }
+
 
   //Manejador que elimina un archivo en la constante lista segun el indice de un archivo
   function handleEliminarArchivo(indice) {
@@ -59,43 +69,55 @@ export default function AgregarProyecto() {
     });
   }
 
-  //Manejadores para la funcionalidad de arrastrar y soltar archivos
-  function handleDragOver(e) {
-    e.preventDefault(); //e.preventsDefault detiene un comportamiento automatico como no permitir arrastrar cosas al dom 
-    setArrastrandoSobre(true);
-  }
 
-  function handleDragLeave() {
-    setArrastrandoSobre(false);
-  }
-
-  function handleDrop(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setArrastrandoSobre(false);
-    agregarArchivos(e.dataTransfer.files); //Metemos en esa constante lista[], los archivos que hemos cargado, ojo, e.dataTransfer.files solo contiene metadatos del archivo, esos metadatos los usamos luego en la llamada a la API para saber donde esta el archivo en el disco
+
+    setCargando(true);
+    setError('');
+
+    try {
+      // 1. Crear el proyecto
+      const respuestaProyecto = await apiClient.post('/proyectos/', {
+        nombreproyecto: nombre,
+        descripcion: descripcion
+      });
+      const proyecto = respuestaProyecto.data; //Necesitas recoger el proyecto para luego subir los archivos y crear la carpeta en Storage
+
+
+      // 2. Subir cada archivo al proyecto recien creado
+      try {
+        for (let i = 0; i < archivos.length; i++) {
+          const formData = new FormData();//FormData es una clase nativa del navegador para construir formularios con datos en formato multipart/form-data. Este formato es necesario para subir archivos.
+
+          //Aqui lo que haces es añadir dos pares clave-valor a la instancia formData
+          formData.append('archivo', archivos[i].archivo);//Archivo binario
+          formData.append('rutaRelativa', archivos[i].rutaRelativa);//ruta al archivo
+
+          //Estamos usando el endpoint /archivos/proyecto/{id}, el endpoint ademas pide el archivo en binario y la ruta relativa del archivo, eso esta en formdata.
+          await apiClient.post('/archivos/proyecto/' + proyecto.id, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' } //Esto es necesario ya que estamos enviando un archivo, sin esto axios pondria como Content-type: application/json y FastAPI lo parsearia a JSON.Ahora FastAPI sabe que tiene que buscar los campos File() y Form()
+          });
+        }
+      }
+
+      catch (err) {
+        // Si falla la subida, borramos el proyecto para no dejarlo huerfano en la BD
+        await apiClient.delete('/proyectos/' + proyecto.id);
+        setError(err.response?.data?.detail || 'Error al subir los archivos');
+        setCargando(false);
+        return;
+      }
+
+      navigate('/proyectos/' + proyecto.id);
+    }
+
+    catch (err) {
+      setError(err.response?.data?.detail || 'Error al crear el proyecto');
+      setCargando(false);
+    }
   }
 
-
-  function handleSubmit(e) {
-    e.preventDefault(); //Aqui usamos .preventDefault para que no se recargue la pagina al enviar el formulario
-
-    // TODO: reemplazar con llamada real al backend
-    // const formData = new FormData();
-    // formData.append('nombre', nombre);
-    // formData.append('descripcion', descripcion);
-    // for (let i = 0; i < archivos.length; i++) {
-    //   formData.append('archivos', archivos[i]);
-    // }
-    // fetch('/api/proyectos', {
-    //   method: 'POST',
-    //   headers: { Authorization: 'Bearer ' + token },
-    //   body: formData,
-    // })
-    //   .then(function(res) { return res.json(); })
-    //   .then(function(data) { navigate('/proyectos/' + data.id); });
-
-    navigate('/proyectos');
-  }
 
   function handleCancelar() {
     navigate('/proyectos');
@@ -107,7 +129,7 @@ export default function AgregarProyecto() {
     const indice = i;
     listaArchivos.push(
       <div key={i} className={styles.archivoItem}>
-        <span className={styles.archivoNombre}>{archivos[i].webkitRelativePath || archivos[i].name}</span>
+        <span className={styles.archivoNombre}>{archivos[i].rutaRelativa}</span>
         <button
           type="button"
           className={styles.archivoEliminar}
@@ -117,12 +139,6 @@ export default function AgregarProyecto() {
         </button>
       </div>
     );
-  }
-
-  //Cambia el estilo de el panel de archivos al arrastrar un archivo en el
-  let zonaClass = styles.zonaSubida;
-  if (arrastrandoSobre) {
-    zonaClass = zonaClass + ' ' + styles.zonaSubidaActiva;
   }
 
   return (
@@ -163,23 +179,14 @@ export default function AgregarProyecto() {
           {/*Bloque de codigo perteneciente a la subida de archivos */}
           <div className={styles.field}>
             <label className={styles.label}>Archivos</label>
-            {/*Este div escucha los eventos de arrastrar y cambia su estilo dependiento */}
-            <div
-              className={zonaClass}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <p className={styles.zonaTexto}>Arrastra archivos o carpetas aquí</p>
-              <div className={styles.zonaBotones}>
-                <button type="button" className={styles.zonaBoton} onClick={function() { inputArchivosRef.current.click(); }}>
-                  Subir archivos
-                </button>
-                <button type="button" className={styles.zonaBoton} onClick={function() { inputCarpetaRef.current.click(); }}>
-                  Subir carpeta
-                </button>
-              </div>
+
+            <div className={styles.zonaBotones}>
+              <button type="button" className={styles.zonaBoton} onClick={function() { inputArchivosRef.current.click(); }}>
+                Subir archivos
+              </button>
+              <button type="button" className={styles.zonaBoton} onClick={function() { inputCarpetaRef.current.click(); }}>
+                Subir carpeta
+              </button>
             </div>
 
             {/*EStos input son necesarios para que se abra el explorador de archivos, nota como arriba, al hacer click en los botones, llamamos a inputArchivosRef.current.click(), llamamos a la referencia de estos inputs */}
@@ -207,9 +214,11 @@ export default function AgregarProyecto() {
             )}
           </div>
           {/*Fin del bloque perteneciente a la subida de archivos */}
-          
-          <button type="submit" className={styles.button}>
-            Crear proyecto
+
+          {error && <p className={styles.error}>{error}</p>}
+
+          <button type="submit" className={styles.button} disabled={cargando}>
+            {cargando ? 'Creando...' : 'Crear proyecto'/*cargando es un estaod, dependiendo de si es true o false obtendra un string u otro */ }
           </button>
 
           <button type="button" className={styles.buttonSecundario} onClick={handleCancelar}>

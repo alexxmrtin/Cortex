@@ -68,11 +68,12 @@ async def subir_archivo(
         db.close()
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
 
-    # Crear la carpeta del proyecto en disco si no existe: Storage/{usuario_id}/{proyecto_id}/
+    # Construimos la ruta completa usando rutaRelativa para respetar la estructura de carpetas original
     carpeta_destino = os.path.join(STORAGE_BASE, str(usuario.id), str(proyecto_id))
-    os.makedirs(carpeta_destino, exist_ok=True)
+    ruta_disco = os.path.join(carpeta_destino, rutaRelativa)
 
-    ruta_disco = os.path.join(carpeta_destino, archivo.filename)
+    # Creamos todos los subdirectorios necesarios (ej: src/components/ dentro del proyecto)
+    os.makedirs(os.path.dirname(ruta_disco), exist_ok=True)
 
 
     # Guardar el archivo en disco de forma asincrona, utilizamos la libreria aiofiles que nos permite trabajar de forma asincrona
