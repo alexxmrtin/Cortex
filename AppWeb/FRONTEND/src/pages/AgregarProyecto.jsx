@@ -3,6 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import styles from '../styles/AgregarProyecto.module.css';
 import apiClient from '../services/api';
 
+/*
+FLUJO COMPLETO PARA SUBIR UN ARCHIVO:
+1. Selección — el input con webkitdirectory te da todos los archivos de la carpeta, ya aplanados. Si la carpeta tiene 50 archivos en 10 subcarpetas, recibes un array de 50 File objects, cada uno con su webkitRelativePath.
+
+2. Estado — cada uno se guarda como { archivo, rutaRelativa } en el array archivos.
+
+3. Submit — se hace un POST /archivos/proyecto/{id} por cada elemento del array. Si hay 50 archivos, son 50 requests HTTP separadas, una detrás de otra (el await dentro del for lo hace secuencial).
+
+El backend recibe cada request, crea los directorios que falten usando rutaRelativa, y guarda el archivo en disco + un registro en la BD.*/
+
+
+
 export default function AgregarProyecto() {
   const navigate = useNavigate();
 
@@ -28,14 +40,13 @@ export default function AgregarProyecto() {
 
 
   //Declaramos una constante donde vamos a guardar todos los archivos que queremos subir
-  //Cada elemento del estado es {archivo: File, rutaRelativa: string} en vez de solo File,
-  //asi la ruta queda fijada en el momento de añadir el archivo y no hay que recalcularla despues
+  //Cada elemento del estado es {archivo: File, rutaRelativa: string} en vez de solo File, asi la ruta queda fijada en el momento de añadir el archivo y no hay que recalcularla despues
   function agregarArchivos(nuevos) {
     const lista = [];
     for (let i = 0; i < nuevos.length; i++) {
       lista.push({
-        archivo: nuevos[i],
-        rutaRelativa: nuevos[i].webkitRelativePath || nuevos[i].name
+        archivo: nuevos[i],//Esto es el objeto File con metadatos del archivo
+        rutaRelativa: nuevos[i].webkitRelativePath || nuevos[i].name //webkitRelatiePath nos da la ruta relativa de los elementos que seleccionamos
       });
     }
     //setArchivos es el estado archivos,prev es un array de archivos que ya existia antes en el estado archivos
@@ -62,6 +73,19 @@ export default function AgregarProyecto() {
       const nueva = [];
       for (let i = 0; i < prev.length; i++) {
         if (i !== indice) {
+          nueva.push(prev[i]);
+        }
+      }
+      return nueva;
+    });
+  }
+
+  //Manejador que elimina todos los archivos que pertenecen a una carpeta raiz
+  function handleEliminarCarpeta(carpetaRaiz) {
+    setArchivos(function(prev) {
+      const nueva = [];
+      for (let i = 0; i < prev.length; i++) {
+        if (!prev[i].rutaRelativa.startsWith(carpetaRaiz + '/')) {
           nueva.push(prev[i]);
         }
       }
@@ -118,28 +142,67 @@ export default function AgregarProyecto() {
     }
   }
 
-
+  //Manejador del boton cancelar, te devuelve a /proyectos
   function handleCancelar() {
     navigate('/proyectos');
   }
 
+//########################################################################################################
+
   //Contruye en el dom los archivos cargados por el usuario y los muestra en el DOM
+  //Si un archivo viene de una carpeta (tiene "/" en su rutaRelativa), se muestra solo el nombre de la carpeta raiz y se salta el resto de archivos de esa misma carpeta para no repetirla
   const listaArchivos = [];
+  const carpetasVistas = []; // Guardamos las carpetas raiz ya añadidas para no duplicarlas
+
+  //Ten en cuenta que archivos[] va a tener cada archivo de la carpeta con su ruta relativa, cada archivo va a comenzar su ruta con el nombre de la raiz,por eso es necesario hacer esto
   for (let i = 0; i < archivos.length; i++) {
-    const indice = i;
-    listaArchivos.push(
-      <div key={i} className={styles.archivoItem}>
-        <span className={styles.archivoNombre}>{archivos[i].rutaRelativa}</span>
-        <button
-          type="button"
-          className={styles.archivoEliminar}
-          onClick={function() { handleEliminarArchivo(indice); }}
-        >
-          ✕
-        </button>
-      </div>
-    );
+    const partes = archivos[i].rutaRelativa.split('/');
+
+    if (partes.length > 1) {
+      // El archivo pertenece a una carpeta, mostramos solo la carpeta raiz una vez
+      const carpetaRaiz = partes[0];
+
+      let yaVista = false;
+      for (let j = 0; j < carpetasVistas.length; j++) {
+        if (carpetasVistas[j] === carpetaRaiz) {
+          yaVista = true;
+          break;
+        }
+      }
+
+      if (!yaVista) {
+        carpetasVistas.push(carpetaRaiz);
+        listaArchivos.push(
+          <div key={'carpeta-' + carpetaRaiz} className={styles.archivoItem}>
+            <span className={styles.archivoNombre}>{carpetaRaiz}</span>
+            <button
+              type="button"
+              className={styles.archivoEliminar}
+              onClick={function() { handleEliminarCarpeta(carpetaRaiz); }}
+            >
+              ✕
+            </button>
+          </div>
+        );
+      }
+    } else {
+      // Archivo individual, se muestra solo
+      const indice = i;
+      listaArchivos.push(
+        <div key={i} className={styles.archivoItem}>
+          <span className={styles.archivoNombre}>{archivos[i].rutaRelativa}</span>
+          <button
+            type="button"
+            className={styles.archivoEliminar}
+            onClick={function() { handleEliminarArchivo(indice); }}
+          >
+            ✕
+          </button>
+        </div>
+      );
+    }
   }
+//###########################################################################################################
 
   return (
     <div className={styles.page}>
@@ -218,7 +281,7 @@ export default function AgregarProyecto() {
           {error && <p className={styles.error}>{error}</p>}
 
           <button type="submit" className={styles.button} disabled={cargando}>
-            {cargando ? 'Creando...' : 'Crear proyecto'/*cargando es un estaod, dependiendo de si es true o false obtendra un string u otro */ }
+            {cargando ? 'Creando...' : 'Crear proyecto'/*cargando es un estado, dependiendo de si es true o false obtendra un string u otro */ }
           </button>
 
           <button type="button" className={styles.buttonSecundario} onClick={handleCancelar}>

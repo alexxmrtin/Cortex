@@ -1,0 +1,65 @@
+================================================================================
+FLUJO: SUBIR UN PROYECTO
+================================================================================
+
+1. FRONTEND — AgregarProyecto.jsx
+   - El usuario rellena nombre y descripcion.
+   - Selecciona archivos (input normal) o una carpeta (input con webkitdirectory).
+   - Cada archivo se guarda en el estado como { archivo: File, rutaRelativa: string }. !!!Importante
+     · Cada archivo es guardado individualmente en la base de datos, cada uno tiene sus metadatos
+     · rutaRelativa viene del  File.webkitRelativePath (ej: "miProyecto/src/index.js")
+       o del nombre del archivo si es suelto.
+   - En la UI se muestra el nombre de la carpeta raiz (no cada archivo individual).
+   - Al hacer Submit:
+
+2. FRONTEND — POST /proyectos/
+   - Se crea el proyecto en la BD con nombre y descripcion.
+   - El backend devuelve el objeto proyecto con su id.
+
+3. FRONTEND — POST /archivos/proyecto/{id}  (una request por archivo)
+   - Por cada archivo del estado se manda un FormData con:
+     · archivo  → binario del fichero
+     · rutaRelativa → ruta relativa completa (ej: "miProyecto/src/index.js")
+   - Si alguna subida falla, se llama a DELETE /proyectos/{id} para no dejar
+     el proyecto huerfano en la BD (rollback manual).
+
+4. BACKEND — ArchivoProyectoController.py
+   - Verifica que el proyecto pertenece al usuario (token JWT).
+   - Construye la ruta en disco:
+       Storage/ArchivosUsuarios/{usuario_id}/{proyecto_id}/{rutaRelativa}
+   - Crea los subdirectorios que falten con os.makedirs(..., exist_ok=True).
+   - Escribe el binario en disco con aiofiles.
+   - Inserta un registro en la tabla ArchivosProyecto con nombre, rutaRelativa y rutaDisco.
+
+5. FRONTEND — navega a /proyectos/{id}
+
+6. FRONTEND — ProjectPanel.jsx
+   - Carga GET /proyectos/{id}  → nombre y descripcion del proyecto.
+   - Carga GET /archivos/proyecto/{id} → lista plana de archivos.(Cada archivo del proyecto)
+   - construirArbol() convierte la lista plana en un arbol anidado
+     parseando las rutaRelativas por "/".
+   - Se renderiza el arbol con FilaArchivo (recursivo), carpetas antes que archivos,
+     nivel raiz expandido por defecto.
+
+
+================================================================================
+MODELO DE DATOS (tablas BD)
+================================================================================
+
+Usuario
+  id, nombreUsuario, email, contrasena (hash), fotoPerfil, tema
+
+Proyecto
+  id, nombreproyecto, descripcion, fechaCreacion, usuario_id → Usuario
+
+ArchivosProyecto
+  id, nombre, rutaRelativa, rutaDisco, proyecto_id → Proyecto
+
+Servicio
+  id, nombre, descripcion, tipo, estado (activo|inactivo), proyectoAsociado, puerto, fechaCreacion, usuario_id → Usuario
+
+Conversacion
+  id, titulo, fechaCreacion, usuario_id → Usuario
+
+Mensaje
+  id, contenido, rol (usuario|ia), fecha, conversacion_id → Conversacion

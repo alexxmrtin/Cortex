@@ -4,10 +4,10 @@ import styles from '../styles/ProjectPanel.module.css';
 import apiClient from '../services/api';
 
 
-// Recibe una lista plana de archivos [{rutaRelativa: "src/components/App.jsx", ...}, ...]
-// y devuelve un arbol de nodos {nombre, tipo, contenido} que FilaArchivo sabe renderizar.
-// Para cada archivo, divide su rutaRelativa por "/" y va creando carpetas en el arbol
-// si no existen todavia, hasta llegar al ultimo segmento que es el archivo.
+//#################################################################################################
+
+// Recibe una lista plana de archivos [{rutaRelativa: "src/components/App.jsx", ...}, ...] y devuelve un arbol de nodos {nombre, tipo, contenido} que FilaArchivo sabe renderizar.
+// Para cada archivo, divide su rutaRelativa por "/" y va creando carpetas en el arbol si no existen todavia, hasta llegar al ultimo segmento que es el archivo.
 function construirArbol(archivosPlanos) {
   const raiz = [];
 
@@ -59,6 +59,9 @@ function construirArbol(archivosPlanos) {
   return raiz;
 }
 
+//################################################################################################
+
+
 
 function IconoCarpeta() {
   return (
@@ -77,11 +80,14 @@ function IconoArchivo() {
   );
 }
 
-//Esta funcion es la mas compleja, la usamos para mostrar las carpetas y lo que contiene dentro,cada archivo/carpeta tiene un nivel, cada nivel se le aumenta una sangria
+//################################################################################################3
+
+//Esta funcion la usamos para mostrar las carpetas y lo que contiene dentro,cada archivo/carpeta tiene un nivel, cada nivel se le aumenta una sangria
 function FilaArchivo({ item, nivel }) {
-  const [abierto, setAbierto] = useState(false); //declaramos el estado del archivo, si esta abierto el archivo o no
+  const [abierto, setAbierto] = useState(nivel === 0); //las carpetas del nivel raiz arrancan abiertas, el resto cerradas
 
   const paddingLeft = 1 + nivel * 1.2; //Calculamos el margen para dar ese efecto de cascada
+
 
   //Esta funcion se ejecuta cuando el usuario hace click en el archivo/carpeta, si es del tipo "Archivo", no hace nada, si es del tipo carpeta, cambia el usestate a false
   function handleClick() {
@@ -97,6 +103,7 @@ function FilaArchivo({ item, nivel }) {
       }
     }
   }
+
 
   //Este es el nucleo de la funcion, usamos recursion. CReamos un array hijos y evaluamos con un if tres condiciones, si se dan las tres condiciones el bucle for recorre cada uno de los elementos que tiene esa carpeta.
   //Finalmente por cada elemento interno, la funcion se llama a si misma
@@ -127,22 +134,26 @@ function FilaArchivo({ item, nivel }) {
   );
 }
 
+//################################################################################################
 
+//FUNCION PRINCIPAL
 export default function ProjectPanel() {
   const { id } = useParams(); //leemos el :id de la URL para saber el id del proyecto estamos renderizando
+
   const [proyecto, setProyecto] = useState(null);
   const [arbol, setArbol] = useState([]);
   const [descripcion, setDescripcion] = useState('');
   const [cargando, setCargando] = useState(true);
 
+
   useEffect(function() {
     async function cargarDatos() {
-      // Promise.all lanza las dos peticiones a la vez en paralelo y espera a que ambas terminen,
-      // es mas rapido que hacerlas una detras de otra con dos awaits seguidos
+
       const [respProyecto, respArchivos] = await Promise.all([
-        apiClient.get('/proyectos/' + id),
-        apiClient.get('/archivos/proyecto/' + id)
+        apiClient.get('/proyectos/' + id), //Obtiene info del proyecto
+        apiClient.get('/archivos/proyecto/' + id) //Obtiene una lista de cada archivo perteneciente al proyecto, cada archivo es un diccionario en la lista [{ id, nombre, tipo, rutaRelativa }, ...]
       ]);
+
       setProyecto(respProyecto.data);
       setDescripcion(respProyecto.data.descripcion || '');
       setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana y obtenemos el arbol

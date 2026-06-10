@@ -4,7 +4,6 @@ from pydantic import BaseModel
 class ArchivoRespuesta(BaseModel):
     id: int
     nombre: str
-    tipo: str  # 'archivo' | 'carpeta'
     rutaRelativa: str
 
     model_config = {"from_attributes": True}

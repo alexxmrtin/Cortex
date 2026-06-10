@@ -55,7 +55,7 @@ def obtener_archivos(proyecto_id: int, authorization: str = Header(...)):
 @router.post("/proyecto/{proyecto_id}", response_model=ArchivoRespuesta)
 async def subir_archivo( 
     proyecto_id: int,
-    archivo: UploadFile = File(...),       
+    archivo: UploadFile = File(...),  #Esto es el binario     
     rutaRelativa: str = Form(...),         
     authorization: str = Header(...)
 ):
@@ -85,7 +85,6 @@ async def subir_archivo(
     #Y para finalizar lo vamos a insertar en la base de datos(solo ponemos los metadatos del archivo)
     nuevo_archivo = ArchivosProyecto(
         nombre=archivo.filename,
-        tipo="archivo",
         rutaRelativa=rutaRelativa,
         rutaDisco=ruta_disco,
         proyecto_id=proyecto_id
