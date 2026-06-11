@@ -1,3 +1,4 @@
+import socket
 from fastapi import APIRouter, HTTPException, Header
 from app.Core.database import SessionLocal
 from app.Models.Servicio import Servicio
@@ -45,6 +46,7 @@ def crear_servicio(datos: ServicioCrear, authorization: str = Header(...)):
         descripcion=datos.descripcion,
         tipo=datos.tipo,
         proyectoAsociado=datos.proyectoAsociado,
+        host=datos.host,
         puerto=datos.puerto,
         usuario_id=usuario.id
     )
@@ -100,6 +102,8 @@ def actualizar_servicio(servicio_id: int, datos: ServicioActualizar, authorizati
         servicio.estado = datos.estado
     if datos.proyectoAsociado is not None:
         servicio.proyectoAsociado = datos.proyectoAsociado
+    if datos.host is not None:
+        servicio.host = datos.host
     if datos.puerto is not None:
         servicio.puerto = datos.puerto
 
@@ -108,6 +112,38 @@ def actualizar_servicio(servicio_id: int, datos: ServicioActualizar, authorizati
     db.close()
 
     return servicio
+
+
+# Estructura que recibe: solo el token JWT en el header Authorization
+# Intenta abrir una conexion TCP a host:puerto con un timeout de 2 segundos
+# Si la conexion tiene exito (resultado == 0) el servicio esta vivo, si no, esta caido
+@router.get("/{servicio_id}/ping")
+def ping_servicio(servicio_id: int, authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+
+    db = SessionLocal()
+    servicio = db.query(Servicio).filter(Servicio.id == servicio_id, Servicio.usuario_id == usuario.id).first()
+    db.close()
+
+    if not servicio:
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #Creamos un socket TCP, AF_INET (IPv4),SOCK_STREAM (TCP)
+        sock.settimeout(2) #Si en dos segundos no tenemos respuesta cuando iniciamos una conexion,abandona
+        
+        resultado = sock.connect_ex((servicio.host, servicio.puerto)) # Aqui se inicia una conexion con el host, connect_ex devuelve 0 si conecta, otro numero si falla
+        sock.close()
+        
+        if resultado == 0:
+            vivo = True
+        else:
+            vivo = False
+            
+    except Exception:
+        vivo = False
+
+    return {"vivo": vivo}
 
 
 # Estructura que recibe: solo el token JWT en el header Authorization

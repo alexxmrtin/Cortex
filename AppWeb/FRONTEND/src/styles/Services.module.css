@@ -148,3 +148,12 @@
   flex-shrink: 0;
   margin-left: auto;
 }
+
+.indicadorComprobando {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #888;
+  flex-shrink: 0;
+  margin-left: auto;
+}

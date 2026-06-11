@@ -11,7 +11,8 @@ class Servicio(Base):
     descripcion = Column(Text, nullable=True)
     tipo = Column(String, nullable=True)
     estado = Column(String, default="activo")     # 'activo' | 'inactivo'
-    proyectoAsociado = Column(String, nullable=False)
+    proyectoAsociado = Column(Integer, ForeignKey("Proyecto.id"), nullable=True)
+    host = Column(String, default="localhost", nullable=False)  # direccion donde corre el servicio , por default sera localhost
     puerto = Column(Integer, nullable=False)
     fechaCreacion = Column(DateTime, default=func.now())
     usuario_id = Column(Integer, ForeignKey("Usuario.id"), nullable=False)

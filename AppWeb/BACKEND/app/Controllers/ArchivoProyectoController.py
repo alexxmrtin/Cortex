@@ -70,7 +70,7 @@ async def subir_archivo(
 
     # Construimos la ruta completa usando rutaRelativa para respetar la estructura de carpetas original
     carpeta_destino = os.path.join(STORAGE_BASE, str(usuario.id), str(proyecto_id))
-    ruta_disco = os.path.join(carpeta_destino, rutaRelativa)
+    ruta_disco = os.path.join(carpeta_destino, rutaRelativa) #Entiende que, cuando un usuario envia un proyecto, envia archivo a archivo usando este endpoint, entonces esto lo que est haciendo es reconstruir todo el proyecto en la memoria del servidor, este caso en /Storage
 
     # Creamos todos los subdirectorios necesarios (ej: src/components/ dentro del proyecto)
     os.makedirs(os.path.dirname(ruta_disco), exist_ok=True)

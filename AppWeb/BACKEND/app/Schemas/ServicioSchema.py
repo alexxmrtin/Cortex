@@ -7,7 +7,8 @@ class ServicioCrear(BaseModel):
     descripcion: str | None = None
     tipo: str | None = None
     estado: str = "activo"
-    proyectoAsociado: str | None = None
+    proyectoAsociado: int | None = None
+    host: str = "localhost"
     puerto: int
 
 # Datos que envias al frontend cuando piden un servicio
@@ -17,7 +18,8 @@ class ServicioRespuesta(BaseModel):
     descripcion: str | None
     tipo: str | None
     estado: str
-    proyectoAsociado: str | None
+    proyectoAsociado: int | None
+    host: str
     puerto: int
     fechaCreacion: datetime
 
@@ -29,5 +31,6 @@ class ServicioActualizar(BaseModel):
     descripcion: str | None = None
     tipo: str | None = None
     estado: str | None = None
-    proyectoAsociado: str | None = None
+    proyectoAsociado: int | None = None
+    host: str | None = None
     puerto: int | None = None

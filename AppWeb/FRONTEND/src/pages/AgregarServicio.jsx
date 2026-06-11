@@ -2,27 +2,34 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../styles/AgregarProyecto.module.css';
 import buscadorStyles from '../styles/BuscadorProyecto.module.css';
-
-// TODO: reemplazar con llamada real al backend (GET /api/proyectos)
-const PROYECTOS_PRUEBA = [
-  { id: 1, nombre: 'Proyecto 1' },
-  { id: 2, nombre: 'Proyecto 2' },
-  { id: 3, nombre: 'Proyecto 3' },
-];
+import apiClient from '../services/api';
 
 export default function AgregarServicio() {
   const navigate = useNavigate();
 
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState('');
+  const [host, setHost] = useState('');
   const [puerto, setPuerto] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
 
-  //Estios son estados que controlan el buscador de proyectos en el formulario
+  //Estos son estados que controlan el buscador de proyectos en el formulario
+  const [proyectos, setProyectos] = useState([]); //Lista de proyectos del usuario cargada desde la API
   const [busqueda, setBusqueda] = useState(''); //Contiene el texto qeu escribe el usuario en el input
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);//Contiene el proyecto elegido
-  const [desplegableAbierto, setDesplegableAbierto] = useState(false);//Controla si se muestran las opciones 
+  const [desplegableAbierto, setDesplegableAbierto] = useState(false);//Controla si se muestran las opciones
   const buscadorRef = useRef(null);
+
+  //Llamada a la API para obtener los proyectos vinculados al usuario, se usa el token JWT del usuario
+  useEffect(function() {
+    async function cargarProyectos() {
+      const respuesta = await apiClient.get('/proyectos/');
+      setProyectos(respuesta.data);
+    }
+    cargarProyectos();
+  }, []);
 
 
   // Cierra el desplegable si el usuario hace clic fuera
@@ -35,7 +42,7 @@ export default function AgregarServicio() {
       }
     }
     document.addEventListener('mousedown', handleClickFuera);
-    
+
     //Este return ejecuta automaticamente handleClickFuera cuando el componente desaparece de la pantalla, importante para que no ocurra un memory leak
     return function () {
       document.removeEventListener('mousedown', handleClickFuera);
@@ -43,10 +50,13 @@ export default function AgregarServicio() {
   }, []);
 
 
-  // Filtra los proyectos según lo que escribe el usuario, se necesita llamar a la API para obtener el json con los proyectos
-  const proyectosFiltrados = PROYECTOS_PRUEBA.filter(function (p) {
-    return p.nombre.toLowerCase().includes(busqueda.toLowerCase()); //Devuelve true o false dependiendo si lo que ha puesto el usuario en el input esta contenido en algun proyecto existente
-  });
+  // Filtra los proyectos segun lo que escribe el usuario
+  const proyectosFiltrados = [];
+  for (let i = 0; i < proyectos.length; i++) {
+    if (proyectos[i].nombreproyecto.toLowerCase().includes(busqueda.toLowerCase())) {
+      proyectosFiltrados.push(proyectos[i]);
+    }
+  }
 
   //Esta funcion se ejecuta cada vez que pulsas una tecla en el buscador de proyecto
   function handleBusquedaChange(e) {
@@ -58,7 +68,7 @@ export default function AgregarServicio() {
   //Esta funcion se ejecuta cuando seleccionas un proyecto en el desplegable
   function seleccionarProyecto(proyecto) {
     setProyectoSeleccionado(proyecto);
-    setBusqueda(proyecto.nombre);
+    setBusqueda(proyecto.nombreproyecto);
     setDesplegableAbierto(false);
   }
 
@@ -68,20 +78,25 @@ export default function AgregarServicio() {
     setBusqueda('');
   }
 
-  //Funcion que maneja el submit, llamar a la API aqui
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setCargando(true);
+    setError('');
 
-    // TODO: reemplazar con llamada real al backend
-    // fetch('/api/servicios', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-    //   body: JSON.stringify({ nombre, tipo, puerto, proyectoId: proyectoSeleccionado?.id, descripcion }),
-    // })
-    //   .then(function(res) { return res.json(); })
-    //   .then(function(data) { navigate('/servicios/' + data.id); });
-
-    navigate('/servicios');
+    try {
+      const respuesta = await apiClient.post('/servicios/', {
+        nombre: nombre,
+        tipo: tipo,
+        host: host,
+        puerto: Number(puerto),
+        proyectoAsociado: proyectoSeleccionado ? proyectoSeleccionado.id : null,
+        descripcion: descripcion
+      });
+      navigate('/servicios/' + respuesta.data.id);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al crear el servicio');
+      setCargando(false);
+    }
   }
 
   //Funcion que maneja el boton cancelar, vuelves a /servicios
@@ -90,19 +105,21 @@ export default function AgregarServicio() {
   }
 
 
-  // Construye el desplegable con las opciones de proyectos, recorre el array proyectosFiltrados[] y crea un boton para cada elemento en el array
-  const opcionesProyecto = proyectosFiltrados.map(function (p) {
-    return (
+  // Construye el desplegable con las opciones de proyectos
+  const opcionesProyecto = [];
+  for (let i = 0; i < proyectosFiltrados.length; i++) {
+    const p = proyectosFiltrados[i];
+    opcionesProyecto.push(
       <button
         key={p.id}
         type="button"
         className={buscadorStyles.opcion}
         onClick={function () { seleccionarProyecto(p); }}
       >
-        {p.nombre}
+        {p.nombreproyecto}
       </button>
     );
-  });
+  }
 
 
   return (
@@ -142,6 +159,19 @@ export default function AgregarServicio() {
           </div>
 
           <div className={styles.field}>
+            <label className={styles.label} htmlFor="host">Host</label>
+            <input
+              id="host"
+              type="text"
+              className={styles.input}
+              placeholder="192.168.1.10"
+              value={host}
+              onChange={function (e) { setHost(e.target.value); }}
+              required
+            />
+          </div>
+
+          <div className={styles.field}>
             <label className={styles.label} htmlFor="puerto">Puerto</label>
             <input
               id="puerto"
@@ -169,7 +199,7 @@ export default function AgregarServicio() {
                 />
                 {proyectoSeleccionado && (
                   <button type="button" className={buscadorStyles.limpiar} onClick={limpiarProyecto}>✕</button>
-                )} 
+                )}
               </div>
 
               {/*Esto es un if, se va a crear el div con las opciones si se cumplen la condicion de desplegableAbierto y busqueda.length >0 */}
@@ -199,8 +229,10 @@ export default function AgregarServicio() {
             />
           </div>
 
-          <button type="submit" className={styles.button}>
-            Crear servicio
+          {error && <p className={styles.error}>{error}</p>}
+
+          <button type="submit" className={styles.button} disabled={cargando}>
+            {cargando ? 'Creando...' : 'Crear servicio'}
           </button>
 
           <button type="button" className={styles.buttonSecundario} onClick={handleCancelar}>
