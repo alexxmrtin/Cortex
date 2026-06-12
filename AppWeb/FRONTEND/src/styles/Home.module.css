@@ -287,6 +287,12 @@
   text-overflow: ellipsis;
 }
 
+.sidebarModelSubtitulo {
+  font-size: 0.62rem;
+  color: #bbb;
+  font-style: italic;
+}
+
 .sidebarUser {
   display: flex;
   align-items: center;

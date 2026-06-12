@@ -366,6 +366,15 @@
   40% { transform: scale(1); opacity: 1; }
 }
 
+/* ── Error ── */
+.errorMensaje {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #e05555;
+  text-align: center;
+}
+
 /* ── Input ── */
 .inputArea {
   display: flex;

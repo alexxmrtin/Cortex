@@ -16,14 +16,18 @@ export default function ConversacionIA() {
 
   // Carga los mensajes de esta conversación desde la API al entrar, y cada vez que cambia el id
   useEffect(function () {
-    
+
     async function cargarMensajes() {
-      const respuesta = await apiClient.get('/mensajes/conversacion/' + id);
-      
-      // La API devuelve { id, contenido, rol, fecha }, mapeamos solo el rol y el contenido de la respuesta de la API y creamos una entrada en Mensajes[] que es un diccionario con dos pares clave-valor usando respuesta.data.rol y respuesta.data.contenido
-      setMensajes(respuesta.data.map(function (m) {
-        return { rol: m.rol, texto: m.contenido };
-      }));
+      try {
+        const respuesta = await apiClient.get('/mensajes/conversacion/' + id);
+
+        // La API devuelve { id, contenido, rol, fecha }, mapeamos solo el rol y el contenido de la respuesta de la API y creamos una entrada en Mensajes[] que es un diccionario con dos pares clave-valor usando respuesta.data.rol y respuesta.data.contenido
+        setMensajes(respuesta.data.map(function (m) {
+          return { rol: m.rol, texto: m.contenido };
+        }));
+      } catch (err) {
+        console.error('Error al cargar los mensajes', err);
+      }
     }
 
     cargarMensajes();
@@ -40,7 +44,7 @@ export default function ConversacionIA() {
 
 
   
-  function enviarMensaje(e) {
+  async function enviarMensaje(e) {
     e.preventDefault();
     const texto = input.trim();
     if (!texto || cargando) return;
@@ -49,13 +53,13 @@ export default function ConversacionIA() {
     setInput('');
     setCargando(true);
 
-    // Simulación — reemplazar con llamada real al backend de IA
-    setTimeout(function () {
-      setMensajes(function (prev) {
-        return [...prev, { rol: 'ia', texto: 'El backend de IA aún no está conectado.' }];
-      });
+    try {
+      // Llama al backend, que guarda el mensaje, llama a Gemini y devuelve la respuesta de la IA
+      const respuesta = await apiClient.post('/mensajes/conversacion/' + id + '/chat', { contenido: texto });
+      setMensajes(function (prev) { return [...prev, { rol: 'ia', texto: respuesta.data.contenido }]; });
+    } finally {
       setCargando(false);
-    }, 1200);
+    }
   }
 
 

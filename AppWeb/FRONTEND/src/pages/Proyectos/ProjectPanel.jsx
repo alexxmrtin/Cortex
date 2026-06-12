@@ -148,16 +148,20 @@ export default function ProjectPanel() {
 
   useEffect(function() {
     async function cargarDatos() {
+      try {
+        const [respProyecto, respArchivos] = await Promise.all([
+          apiClient.get('/proyectos/' + id), //Obtiene info del proyecto
+          apiClient.get('/archivos/proyecto/' + id) //Obtiene una lista de cada archivo perteneciente al proyecto, cada archivo es un diccionario en la lista [{ id, nombre, tipo, rutaRelativa }, ...]
+        ]);
 
-      const [respProyecto, respArchivos] = await Promise.all([
-        apiClient.get('/proyectos/' + id), //Obtiene info del proyecto
-        apiClient.get('/archivos/proyecto/' + id) //Obtiene una lista de cada archivo perteneciente al proyecto, cada archivo es un diccionario en la lista [{ id, nombre, tipo, rutaRelativa }, ...]
-      ]);
-
-      setProyecto(respProyecto.data);
-      setDescripcion(respProyecto.data.descripcion || '');
-      setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana y obtenemos el arbol
-      setCargando(false);
+        setProyecto(respProyecto.data);
+        setDescripcion(respProyecto.data.descripcion || '');
+        setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana y obtenemos el arbol
+      } catch (err) {
+        console.error('Error al cargar el proyecto', err);
+      } finally {
+        setCargando(false);
+      }
     }
     cargarDatos();
   }, [id]); // Se vuelve a ejecutar cuando el usuario navega a otro proyecto

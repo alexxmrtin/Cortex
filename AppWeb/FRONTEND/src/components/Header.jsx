@@ -14,9 +14,13 @@ export default function Header() {
     if (!token) return;
     
     async function cargarFoto() {
-      const respuesta = await apiClient.get('/usuarios/me');
-      const url = respuesta.data.fotoPerfil;
-      if (url) setFotoPerfil(`${import.meta.env.VITE_API_URL}${url}`);
+      try {
+        const respuesta = await apiClient.get('/usuarios/me');
+        const url = respuesta.data.fotoPerfil;
+        if (url) setFotoPerfil(`${import.meta.env.VITE_API_URL}${url}`);
+      } catch (err) {
+        console.error('Error al cargar la foto de perfil', err);
+      }
     }
     cargarFoto();
   }, []);

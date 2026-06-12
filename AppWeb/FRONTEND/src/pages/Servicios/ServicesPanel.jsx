@@ -13,38 +13,47 @@ export default function ServicesPanel() {
 
   useEffect(function() {
     async function cargarDatos() {
-      const respuesta = await apiClient.get('/servicios/' + id);
-      setServicio(respuesta.data);
-      setCargando(false);
+      try {
+        const respuesta = await apiClient.get('/servicios/' + id);
+        setServicio(respuesta.data);
 
-      // Si el servicio tiene proyecto asociado, recogemos el proyecto de la API
-      if (respuesta.data.proyectoAsociado) {
-        const respProyecto = await apiClient.get('/proyectos/' + respuesta.data.proyectoAsociado);
-        setProyecto(respProyecto.data);
+        // Si el servicio tiene proyecto asociado, recogemos el proyecto de la API
+        if (respuesta.data.proyectoAsociado) {
+          const respProyecto = await apiClient.get('/proyectos/' + respuesta.data.proyectoAsociado);
+          setProyecto(respProyecto.data);
+        }
+
+        // Una vez cargado el servicio, hacemos el ping para saber si esta vivo
+        const ping = await apiClient.get('/servicios/' + id + '/ping');
+        setVivo(ping.data.vivo);
+
+        // Actualizamos el estado segun el resultado del ping
+        let nuevoEstado;
+        if (ping.data.vivo) {
+          nuevoEstado = 'activo';
+        } else {
+          nuevoEstado = 'inactivo';
+        }
+        const actualizado = await apiClient.patch('/servicios/' + id, { estado: nuevoEstado });
+        setServicio(actualizado.data);
+      } catch (err) {
+        console.error('Error al cargar el servicio', err);
+      } finally {
+        setCargando(false);
       }
-
-      // Una vez cargado el servicio, hacemos el ping para saber si esta vivo
-      const ping = await apiClient.get('/servicios/' + id + '/ping');
-      setVivo(ping.data.vivo);
-
-      // Actualizamos el estado segun el resultado del ping
-      let nuevoEstado;
-      if (ping.data.vivo) {
-        nuevoEstado = 'activo';
-      } else {
-        nuevoEstado = 'inactivo';
-      }
-      const actualizado = await apiClient.patch('/servicios/' + id, { estado: nuevoEstado });
-      setServicio(actualizado.data);
     }
     cargarDatos();
   }, [id]);
 
   // Alterna el estado entre 'activo' e 'inactivo' en la base de datos
   async function toggleEstado() {
-    const nuevoEstado = servicio.estado === 'activo' ? 'inactivo' : 'activo';
-    const respuesta = await apiClient.patch('/servicios/' + id, { estado: nuevoEstado });
-    setServicio(respuesta.data);
+    try {
+      const nuevoEstado = servicio.estado === 'activo' ? 'inactivo' : 'activo';
+      const respuesta = await apiClient.patch('/servicios/' + id, { estado: nuevoEstado });
+      setServicio(respuesta.data);
+    } catch (err) {
+      console.error('Error al cambiar el estado del servicio', err);
+    }
   }
 
   if (cargando) {

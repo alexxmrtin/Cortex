@@ -1,0 +1,125 @@
+.wrapper {
+  margin-top: auto;
+  padding: 3rem 0.2rem 0.4rem;
+}
+
+.badgeWrapper {
+  position: relative;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: #f4f4f4;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.badge:hover {
+  background: #ebebeb;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  overflow: hidden;
+}
+
+.label {
+  font-size: 0.65rem;
+  color: #aaa;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: left;
+}
+
+.nombre {
+  font-size: 0.82rem;
+  color: #555;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.panel {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.panelTitulo {
+  font-size: 0.65rem;
+  color: #aaa;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.25rem 0.5rem;
+  margin: 0 0 0.4rem;
+}
+
+.modeloItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.modeloItem:hover {
+  background: #f4f4f4;
+}
+
+.modeloItem:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.modeloItemActivo {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.modeloItemActivo:hover {
+  background: #dcfce7;
+}
+
+.modeloNombre {
+  font-size: 0.82rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.modeloProveedor {
+  font-size: 0.68rem;
+  color: #aaa;
+}

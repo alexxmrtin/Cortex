@@ -47,21 +47,20 @@ function SeccionPerfil({ usuario }) {
 
   //Cuando el usuario confirma, ya subimos la imagen y demas al servidor
   async function handleSubmit() {
-    
-    if (archivoFoto) {
-      const formData = new FormData();
-      formData.append('archivo', archivoFoto);
-      
-      await apiClient.post('/usuarios/me/foto', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-    }
-    
     try {
+      if (archivoFoto) {
+        const formData = new FormData();
+        formData.append('archivo', archivoFoto);
+
+        await apiClient.post('/usuarios/me/foto', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
       await apiClient.patch('/usuarios/me', { nombreUsuario: nombre, email: email });
       setError('');
     } catch (error) {
-      setError(error.response.data.detail);
+      setError(error.response?.data?.detail || 'Error al guardar los cambios');
     }
   }
 
@@ -186,12 +185,16 @@ function SeccionApariencia({usuario}) {
   const [tema, setTema] = useState('claro');
 
   async function handleTema(nuevoTema){
-    if (nuevoTema === 'claro') {
-      await apiClient.patch('/usuarios/me', { tema: 'claro' });
-    } else {
-      await apiClient.patch('/usuarios/me', { tema: 'oscuro' });
+    try {
+      if (nuevoTema === 'claro') {
+        await apiClient.patch('/usuarios/me', { tema: 'claro' });
+      } else {
+        await apiClient.patch('/usuarios/me', { tema: 'oscuro' });
+      }
+      setTema(nuevoTema);
+    } catch (err) {
+      console.error('Error al cambiar el tema', err);
     }
-    setTema(nuevoTema);
   }
 
 
@@ -237,9 +240,13 @@ function SeccionCuenta() {
   const navigate = useNavigate();
 
   async function handleEliminarCuenta() {
-    await apiClient.delete('/usuarios/me');
-    localStorage.removeItem('authToken');
-    navigate('/');
+    try {
+      await apiClient.delete('/usuarios/me');
+      localStorage.removeItem('authToken');
+      navigate('/');
+    } catch (err) {
+      console.error('Error al eliminar la cuenta', err);
+    }
   }
 
   //Seteamos el estado confirmar a false, cuando se renderiza esta en false por tanto se renderiza la primera parte del if (es un if comprimido), si clickamos hacemos que el estado confirmar sea true, por lo que al renderizar de nuevo, se va al else y renderiza un html distinto,si pulsamos confirmar ya es cuando llamamos a la API
@@ -287,8 +294,12 @@ export default function Ajustes() {
     if (!token) return;
     
     async function cargarUsuario() {
-      const respuesta = await apiClient.get('/usuarios/me');
-      setUsuario(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/usuarios/me');
+        setUsuario(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar el usuario', err);
+      }
     }
     cargarUsuario();
   }, []);

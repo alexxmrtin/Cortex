@@ -4,6 +4,7 @@ import styles from '../styles/Home.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
 import apiClient from '../services/api';
 import Calendar from '../components/Calendar';
+import SelectorModelo from '../components/SelectorModelo';
 
 function SidebarItem({ to, icon, label, expandable, children }) {
   const [open, setOpen] = useState(false);
@@ -108,18 +109,30 @@ export default function Home() {
     if (!token) return;
     
     async function cargarUsuario() {
-      const respuesta = await apiClient.get('/usuarios/me');
-      setUsuario(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/usuarios/me');
+        setUsuario(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar el usuario', err);
+      }
     }
 
     async function cargarServicios() {
-      const respuesta = await apiClient.get('/servicios/');
-      setServicios(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/servicios/');
+        setServicios(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar los servicios', err);
+      }
     }
 
     async function cargarProyectos() {
-      const respuesta = await apiClient.get('/proyectos/');
-      setProyectos(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/proyectos/');
+        setProyectos(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar los proyectos', err);
+      }
     }
 
     cargarUsuario();
@@ -130,6 +143,11 @@ export default function Home() {
   function cerrarSesion(){
     localStorage.removeItem('authToken');
     window.location.href = '/';
+  }
+
+  //Esta funcion es solo visual para que ponga el modelo en la sidebar, el modelo se actualiza en la db en el componente SelectorModelo.jsx
+  function cambiarModelo(modeloId) {
+    setUsuario(function (prev) { return { ...prev, modeloIA: modeloId }; });
   }
 
   //VISTA DE USUARIO LOGEADO
@@ -226,15 +244,12 @@ export default function Home() {
               </Link>
             </nav>
 
-            <div className={styles.sidebarModel}>
-              <div className={styles.sidebarModelBadge}>
-                <span className={styles.sidebarModelDot} />
-                <div className={styles.sidebarModelTexto}>
-                  <span className={styles.sidebarModelLabel}>Modelo</span>
-                  <span className={styles.sidebarModelNombre}>Gemini 1.5 Flash</span>
-                </div>
-              </div>
-            </div>
+            {/*Renderizamos el componente SelectorModelo.jsx, es un boton que despliega las opciones de los modelos,
+            una vez se selecciona un modelo, se llama al endpoint patch /me para actualizar el modelo que usa el usuario */}
+            <SelectorModelo
+              modeloActual={usuario?.modeloIA} //Esto es un prop que le estamos pasando al componente, que es el modelo que tiene el usuario
+              onCambiar={cambiarModelo} //Esto es una funcion del componente, el cual le esta pasando el nombre del modelo a la funcion cambiarModelo como parametro
+            />
 
             <div className={styles.sidebarUser}>
               <img src={getFotoPerfil(usuario?.fotoPerfil)} alt="perfil" className={styles.sidebarAvatar} />
@@ -296,6 +311,20 @@ export default function Home() {
               />
 
             </nav>
+
+            <div className={styles.sidebarModel}>
+              <div className={styles.sidebarModelBadge}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <div className={styles.sidebarModelTexto}>
+                  <span className={styles.sidebarModelLabel}>Modelo</span>
+                  <span className={styles.sidebarModelNombre}>Gemini 2.0 Flash</span>
+                  <span className={styles.sidebarModelSubtitulo}>Inicia sesión para cambiar</span>
+                </div>
+              </div>
+            </div>
 
           </aside>
 

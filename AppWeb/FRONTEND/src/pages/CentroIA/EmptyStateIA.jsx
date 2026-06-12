@@ -13,18 +13,40 @@ export default function EmptyStateIA() {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
 
   
-  // Crea una conversación en la BD con el texto de la sugerencia como título y navega a ella pasando el texto como mensaje inicial via router state.
-  // ConversacionIA lo recoge con useLocation().state?.mensajeInicial
-  async function handleSugerencia(texto) {
+  // Crea una conversación, llama al chat de IA con el primer mensaje y navega a ella.
+  // Al llegar a ConversacionIA, ya hay respuesta de Gemini cargada en la BD.
+  async function handleMensajeInicio(texto) {
     setCargando(true);
-    const respuesta = await apiClient.post('/conversaciones/', { titulo: texto }); //Creamos una nueva conversacion en la bd
-    const conversacionId = respuesta.data.id;
+    let conversacionId = null; //Guardamos el id aqui para poder acceder a el en el catch
 
-    await apiClient.post('/mensajes/conversacion/' + conversacionId, { contenido: texto, rol: 'usuario' }); //Guardamos el primer mensaje en la bd
+    try {
+      //Obtenemos del input del usuario las primeras 4 palabras, si hay 4 o mas palabras añade 3 puntos al dinal
+      const palabras = texto.split(' ');
+      let titulo = palabras.slice(0, 4).join(' ');
+      if (palabras.length >= 4) {
+        titulo = titulo + '...';
+      }
 
-    navigate('/centroIA/conversacion/' + conversacionId); //Navegamos a la conversacion, ConversacionIA cargara el mensaje desde la API
+      const respuesta = await apiClient.post('/conversaciones/', { titulo: titulo }); //Creamos una nueva conversacion en la bd
+      conversacionId = respuesta.data.id;
+
+      // Usamos el endpoint de chat: guarda el mensaje del usuario, llama a Gemini y guarda la respuesta
+      await apiClient.post('/mensajes/conversacion/' + conversacionId + '/chat', { contenido: texto });
+
+      navigate('/centroIA/conversacion/' + conversacionId); //Navegamos a la conversacion, ConversacionIA cargara el mensaje desde la API
+    } catch (err) {
+      console.error('Error al crear la conversación', err);
+      
+      // Si la conversacion ya fue creada pero el chat fallo, la borramos para no dejarla huerfana en la BD
+      if (conversacionId) {
+        await apiClient.delete('/conversaciones/' + conversacionId).catch(function() {});
+      }
+      setError('No se pudo iniciar la conversación. Inténtalo de nuevo.');
+      setCargando(false);
+    }
   }
 
 
@@ -50,13 +72,16 @@ export default function EmptyStateIA() {
         <div className={styles.sugerencias}>
           {SUGERENCIAS.map(function (s) {
             return (
-              <button key={s} className={styles.sugerencia} disabled={cargando} onClick={function () { handleSugerencia(s); }}>
+              <button key={s} className={styles.sugerencia} disabled={cargando} onClick={function () { handleMensajeInicio(s); }}>
                 {s}
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Mensaje de error visible para el usuario */}
+      {error && <p className={styles.errorMensaje}>{error}</p>}
 
       {/* Input fijo en la parte inferior*/}
       <form 
@@ -66,7 +91,7 @@ export default function EmptyStateIA() {
 
             //Si no esta vacio, se ejecuta la funcion handleSugerencia con el contenido del estado Input
             if(input.trim()){ 
-              handleSugerencia(input.trim()); 
+              handleMensajeInicio(input.trim()); 
             }
         }}>
 
@@ -75,7 +100,7 @@ export default function EmptyStateIA() {
           type="text"
           placeholder="Escribe tu mensaje..."
           value={input}
-          onChange={function (e) { setInput(e.target.value); } /*El valor que escribe el usuario en el input lo ponemos en el estado Input */}
+          onChange={function (e) { setInput(e.target.value); setError(''); } /*El valor que escribe el usuario en el input lo ponemos en el estado Input */}
           disabled={cargando}
         />
 

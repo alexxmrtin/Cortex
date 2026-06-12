@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useMatch } from 'react-router-dom';
 import styles from '../../styles/CentroIA.module.css';
 import perfilNoDefinido from '../../assets/perfilNoDefinido.jpg';
 import apiClient from '../../services/api';
+import SelectorModelo from '../../components/SelectorModelo';
 
 
 // Convierte una fecha ISO a "Hoy", "Ayer" o "3 jun", fechaISO es la fecha que viene de la API con formato string ISO 8601,"2026-06-12T10:30:45.123456"
@@ -36,8 +37,12 @@ export default function CentroIA() {
 
   useEffect(function () {
     async function cargarUsuario() {
-      const respuesta = await apiClient.get('/usuarios/me');
-      setUsuario(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/usuarios/me');
+        setUsuario(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar el usuario', err);
+      }
     }
     cargarUsuario();
   }, []);
@@ -45,11 +50,19 @@ export default function CentroIA() {
   // Se recarga cada vez que cambia la conversación activa, así aparece en el sidebar justo después de crear una nueva
   useEffect(function () {
     async function cargarConversaciones() {
-      const respuesta = await apiClient.get('/conversaciones/');
-      setConversaciones(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/conversaciones/');
+        setConversaciones(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar las conversaciones', err);
+      }
     }
     cargarConversaciones();
   }, [conversacionActivaId]);
+
+  function cambiarModelo(modeloId) {
+    setUsuario(function (anterior) { return { ...anterior, modeloIA: modeloId }; });
+  }
 
   //Cuando haces click en Nueva conversacion de la sidebar, te lleva al EmptyStateIA
   function nuevaConversacion() {
@@ -65,12 +78,16 @@ export default function CentroIA() {
   // Si se borra la conversación activa, vuelve al EmptyState.
   async function borrarConversacion(e, convId) {
     e.stopPropagation(); // evita que el click llegue al div padre y navegue a la conversacion
-    await apiClient.delete('/conversaciones/' + convId);
-    if (String(convId) === conversacionActivaId) {
-      navigate('/centroIA');
+    try {
+      await apiClient.delete('/conversaciones/' + convId);
+      if (String(convId) === conversacionActivaId) {
+        navigate('/centroIA');
+      }
+      const respuesta = await apiClient.get('/conversaciones/');
+      setConversaciones(respuesta.data);
+    } catch (err) {
+      console.error('Error al borrar la conversación', err);
     }
-    const respuesta = await apiClient.get('/conversaciones/');
-    setConversaciones(respuesta.data);
   }
 
   // Usamos div en lugar de button porque necesitamos meter un button (papelera) dentro,
@@ -129,16 +146,13 @@ export default function CentroIA() {
           <p className={styles.sidebarSection}>Conversaciones</p>
           {itemsConversaciones}
         </nav>
-
-        <div className={styles.sidebarModel}>
-          <div className={styles.sidebarModelBadge}>
-            <span className={styles.sidebarModelDot} />
-            <div className={styles.sidebarModelTexto}>
-              <span className={styles.sidebarModelLabel}>Modelo</span>
-              <span className={styles.sidebarModelNombre}>Gemini 1.5 Flash</span>
-            </div>
-          </div>
-        </div>
+        
+        {/*Renderizamos el componente SelectorModelo.jsx, es un boton que despliega las opciones de los modelos,
+        una vez se selecciona un modelo, se llama al endpoint patch /me para actualizar el modelo que usa el usuario */}
+        <SelectorModelo
+          modeloActual={usuario?.modeloIA} //Esto es un prop que le estamos pasando al componente, que es el modelo que tiene el usuario
+          onCambiar={cambiarModelo} //Esto es una funcion del componente, el cual le esta pasando el nombre del modelo a la funcion cambiarModelo como parametro
+        />
 
         <Link to="/ajustes" className={styles.sidebarUser}>
           <img

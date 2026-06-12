@@ -14,8 +14,12 @@ export default function Projects() {
   
   useEffect(function() {
     async function cargarProyectos() {
-      const respuesta = await apiClient.get('/proyectos/');
-      setProyectos(respuesta.data); //respuesta.data es un array de diccionarios, cada diccionario es un proyecto
+      try {
+        const respuesta = await apiClient.get('/proyectos/');
+        setProyectos(respuesta.data); //respuesta.data es un array de diccionarios, cada diccionario es un proyecto
+      } catch (err) {
+        console.error('Error al cargar los proyectos', err);
+      }
     }
     cargarProyectos();
   }, [id]); // Se vuelve a ejecutar cuando cambia el id, asi si acabas de crear un proyecto y navegas a el, la lista se recarga
@@ -23,8 +27,12 @@ export default function Projects() {
 
   useEffect(function() {
     async function cargarUsuario() {
-      const respuesta = await apiClient.get('/usuarios/me');
-      setUsuario(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/usuarios/me');
+        setUsuario(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar el usuario', err);
+      }
     }
     cargarUsuario();
   }, []); // Solo se ejecuta al montar el componente, el usuario no cambia mientras navega entre proyectos

@@ -15,26 +15,30 @@ export default function Services() {
   //Llamada a la API para obtener los servicios de la db, luego pinga cada uno en paralelo
   useEffect(function() {
     async function cargarServicios() {
-      const respuesta = await apiClient.get('/servicios/');
-      setServicios(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/servicios/');
+        setServicios(respuesta.data);
 
-      // Pingamos todos los servicios en paralelo y construimos el mapa { id: true/false }
-      const lista = respuesta.data;//obtenemos los servicios
-      const promesas = [];
-      
-      //Recorremos la lista haciendo ping a cada servicio
-      for (let i = 0; i < lista.length; i++) {
-        promesas.push(apiClient.get('/servicios/' + lista[i].id + '/ping'));
+        // Pingamos todos los servicios en paralelo y construimos el mapa { id: true/false }
+        const lista = respuesta.data;//obtenemos los servicios
+        const promesas = [];
+
+        //Recorremos la lista haciendo ping a cada servicio
+        for (let i = 0; i < lista.length; i++) {
+          promesas.push(apiClient.get('/servicios/' + lista[i].id + '/ping'));
+        }
+        const resultados = await Promise.all(promesas); //Esto es algo complejo, el for crea una lista donde cada elemento es una promesa, esta linea espera y recoge cada promesa dentro de la lista
+
+
+        //Este ultimo bloque crea el objeto vivosMap, cada par clave valor contiene la id del servicio y un true/false dependiendo de si ha respondido o no
+        const nuevoMapa = {};
+        for (let i = 0; i < lista.length; i++) {
+          nuevoMapa[lista[i].id] = resultados[i].data.vivo; //{1:true , 2:false , 3:false...}
+        }
+        setVivosMap(nuevoMapa);
+      } catch (err) {
+        console.error('Error al cargar los servicios', err);
       }
-      const resultados = await Promise.all(promesas); //Esto es algo complejo, el for crea una lista donde cada elemento es una promesa, esta linea espera y recoge cada promesa dentro de la lista
-
-
-      //Este ultimo bloque crea el objeto vivosMap, cada par clave valor contiene la id del servicio y un true/false dependiendo de si ha respondido o no
-      const nuevoMapa = {};
-      for (let i = 0; i < lista.length; i++) {
-        nuevoMapa[lista[i].id] = resultados[i].data.vivo; //{1:true , 2:false , 3:false...}
-      }
-      setVivosMap(nuevoMapa);
     }
     cargarServicios();
   }, [id]); // Se vuelve a ejecutar cuando cambia el id, igual que en Projects.jsx
@@ -43,8 +47,12 @@ export default function Services() {
   //Llamada a la API para obtener el usuario usando el token JWT
   useEffect(function() {
     async function cargarUsuario() {
-      const respuesta = await apiClient.get('/usuarios/me');
-      setUsuario(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/usuarios/me');
+        setUsuario(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar el usuario', err);
+      }
     }
     cargarUsuario();
   }, []);

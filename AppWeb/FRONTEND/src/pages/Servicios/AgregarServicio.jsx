@@ -25,8 +25,12 @@ export default function AgregarServicio() {
   //Llamada a la API para obtener los proyectos vinculados al usuario, se usa el token JWT del usuario
   useEffect(function() {
     async function cargarProyectos() {
-      const respuesta = await apiClient.get('/proyectos/');
-      setProyectos(respuesta.data);
+      try {
+        const respuesta = await apiClient.get('/proyectos/');
+        setProyectos(respuesta.data);
+      } catch (err) {
+        console.error('Error al cargar los proyectos', err);
+      }
     }
     cargarProyectos();
   }, []);
