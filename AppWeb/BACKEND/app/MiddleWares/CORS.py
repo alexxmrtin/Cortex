@@ -6,7 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware #FastAPI nos proporciona un m
 
 # Origenes permitidos, añadir aqui las URLs del frontend
 origenes = [
-    "http://localhost:5173",  # Frontend en desarrollo
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
 ]
 
 def configurar_cors(app):

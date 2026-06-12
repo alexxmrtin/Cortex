@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from '../styles/AgregarProyecto.module.css';
-import buscadorStyles from '../styles/BuscadorProyecto.module.css';
-import apiClient from '../services/api';
+import styles from '../../styles/AgregarProyecto.module.css';
+import buscadorStyles from '../../styles/BuscadorProyecto.module.css';
+import apiClient from '../../services/api';
 
 export default function AgregarServicio() {
   const navigate = useNavigate();

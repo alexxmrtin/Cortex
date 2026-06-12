@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import styles from '../styles/ProjectPanel.module.css';
-import apiClient from '../services/api';
+import styles from '../../styles/ProjectPanel.module.css';
+import apiClient from '../../services/api';
 
 
 //#################################################################################################

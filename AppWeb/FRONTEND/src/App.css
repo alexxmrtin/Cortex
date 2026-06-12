@@ -6,7 +6,8 @@
 
 html, body, #root {
   height: auto;
-  background-color: white;
+  background: linear-gradient(135deg, #ede9f4 0%, #e8ede7 100%);
+  background-attachment: fixed;
 }
 
 body {

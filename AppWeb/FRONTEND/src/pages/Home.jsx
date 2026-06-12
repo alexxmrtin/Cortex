@@ -3,102 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Home.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
 import apiClient from '../services/api';
-
-const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-const MONTHS = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
-function Calendar() {
-  //Guardamos info con usestate de la fecha actual
-  const today = new Date();
-  const [current, setCurrent] = useState({ month: today.getMonth(), year: today.getFullYear() });
-
-  const firstDay = new Date(current.year, current.month, 1).getDay();
-  const daysInMonth = new Date(current.year, current.month + 1, 0).getDate(); //Utilizamos un truco que consiste en obtener los dias del mes usando como dia el 0 y asi obteniendo el ultimo numero del mes que da el total de dias
-
-  //Funcion para obtener mes anterior
-  function prev() {
-    setCurrent(function(c) {
-      let m, y;
-      if (c.month === 0) {
-        m = 11;
-        y = c.year - 1;
-      } else {
-        m = c.month - 1;
-        y = c.year;
-      }
-      return { month: m, year: y };
-    });
-  }
-
-  //Funcion para obtener el mes siguiente
-  function next() {
-    setCurrent(function(c) {
-      let m, y;
-      if (c.month === 11) {
-        m = 0;
-        y = c.year + 1;
-      } else {
-        m = c.month + 1;
-        y = c.year;
-      }
-      return { month: m, year: y };
-    });
-  }
-
-  // Construimos el array de celdas del calendario
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  // Construimos los elementos de nombres de dia
-  const dayNames = [];
-  for (let i = 0; i < DAYS.length; i++) {
-    dayNames.push(
-      <div key={DAYS[i]} className={styles.calendarDayName}>
-        {DAYS[i]}
-      </div>
-    );
-  }
-
-  // Construimos las celdas de los dias
-  const dayCells = [];
-  for (let i = 0; i < cells.length; i++) {
-    const day = cells[i];
-
-    let className = styles.calendarDay;
-
-    if (day === today.getDate() && current.month === today.getMonth() && current.year === today.getFullYear()) {
-      className = className + ' ' + styles.calendarToday;
-    }
-
-    if (day === null) {
-      className = className + ' ' + styles.calendarEmpty;
-    }
-
-    dayCells.push(
-      <div key={i} className={className}>
-        <span>{day}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.calendar}>
-      <div className={styles.calendarHeader}>
-        <button onClick={prev} className={styles.calendarNav}>&#8249;</button>
-        <span className={styles.calendarTitle}>{MONTHS[current.month]} {current.year}</span>
-        <button onClick={next} className={styles.calendarNav}>&#8250;</button>
-      </div>
-      <div className={styles.calendarGrid}>
-        {dayNames}
-        {dayCells}
-      </div>
-    </div>
-  );
-}
+import Calendar from '../components/Calendar';
 
 function SidebarItem({ to, icon, label, expandable, children }) {
   const [open, setOpen] = useState(false);
@@ -257,7 +162,7 @@ export default function Home() {
       for (let i = 0; i < proyectos.length && itemsProyectos.length < 3; i++) {
         itemsProyectos.push(
           <Link key={proyectos[i].id} to="/proyectos" className={styles.sidebarDropdownItem}>
-            {proyectos[i].nombre}
+            {proyectos[i].nombreproyecto}
           </Link>
         );
       }
@@ -320,6 +225,16 @@ export default function Home() {
                 Ajustes
               </Link>
             </nav>
+
+            <div className={styles.sidebarModel}>
+              <div className={styles.sidebarModelBadge}>
+                <span className={styles.sidebarModelDot} />
+                <div className={styles.sidebarModelTexto}>
+                  <span className={styles.sidebarModelLabel}>Modelo</span>
+                  <span className={styles.sidebarModelNombre}>Gemini 1.5 Flash</span>
+                </div>
+              </div>
+            </div>
 
             <div className={styles.sidebarUser}>
               <img src={getFotoPerfil(usuario?.fotoPerfil)} alt="perfil" className={styles.sidebarAvatar} />

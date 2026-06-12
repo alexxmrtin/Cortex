@@ -4,13 +4,15 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Projects from './pages/Projects';
-import ProjectPanel from './pages/ProjectPanel';
-import AgregarProyecto from './pages/AgregarProyecto';
-import CentroIA from './pages/CentroIA';
-import Servicios from './pages/Services';
-import ServicesPanel from './pages/ServicesPanel';
-import AgregarServicio from './pages/AgregarServicio';
+import Projects from './pages/Proyectos/index';
+import ProjectPanel from './pages/Proyectos/ProjectPanel';
+import AgregarProyecto from './pages/Proyectos/AgregarProyecto';
+import CentroIA from './pages/CentroIA/index';
+import EmptyStateIA from './pages/CentroIA/EmptyStateIA';
+import ConversacionIA from './pages/CentroIA/ConversacionIA';
+import Servicios from './pages/Servicios/index';
+import ServicesPanel from './pages/Servicios/ServicesPanel';
+import AgregarServicio from './pages/Servicios/AgregarServicio';
 import Ajustes from './pages/Ajustes';
 import './App.css';
 
@@ -33,7 +35,10 @@ export default function App() {
             <Route path='agregarProyecto' element={<AgregarProyecto />} />
           </Route>
 
-          <Route path='centroIA' element={<CentroIA />}></Route>
+          <Route path='centroIA' element={<CentroIA />}>
+            <Route index element={<EmptyStateIA />} /> {/* Index le dice a React Router que sta es la ruta por defecto*/}
+            <Route path='conversacion/:id' element={<ConversacionIA />} />
+          </Route>
           
           <Route path='/servicios' element={<Servicios/>}>
             <Route path=':id' element={<ServicesPanel />} />

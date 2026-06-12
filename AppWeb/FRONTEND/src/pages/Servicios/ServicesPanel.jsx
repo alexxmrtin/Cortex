@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import styles from '../styles/ServicesPanel.module.css';
-import apiClient from '../services/api';
+import styles from '../../styles/ServicesPanel.module.css';
+import apiClient from '../../services/api';
 
 export default function ServicesPanel() {
   const { id } = useParams();

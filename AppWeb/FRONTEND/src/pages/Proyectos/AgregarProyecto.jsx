@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from '../styles/AgregarProyecto.module.css';
-import apiClient from '../services/api';
+import styles from '../../styles/AgregarProyecto.module.css';
+import apiClient from '../../services/api';
 
 /*
 FLUJO COMPLETO PARA SUBIR UN ARCHIVO:

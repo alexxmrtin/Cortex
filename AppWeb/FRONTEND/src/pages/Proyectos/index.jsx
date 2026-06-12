@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useParams } from 'react-router-dom';
-import styles from '../styles/Projects.module.css';
-import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
-import apiClient from '../services/api';
+import styles from '../../styles/Projects.module.css';
+import perfilNoDefinido from '../../assets/perfilNoDefinido.jpg';
+import apiClient from '../../services/api';
 
 
 export default function Projects() {
