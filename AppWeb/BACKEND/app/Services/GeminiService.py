@@ -29,15 +29,28 @@ def _convertir_historial(mensajes_db):
 
 
 
-def llamar_gemini(historial_db, mensaje_nuevo: str) -> str:
-    historial = _convertir_historial(historial_db) #Llamamos a la funcion que acabamos de crear arriba para que nos devuelva el array de objetos types
+def ping_gemini() -> bool:
+    try:
+        cliente.models.generate_content(
+            model="gemini-2.0-flash",
+            contents="hi",
+            config=types.GenerateContentConfig(max_output_tokens=1)
+        )
+        return True
+    except Exception:
+        return False
 
+
+def llamar_gemini(historial_db, mensaje_nuevo: str, system_prompt: str = "") -> str:
+    historial = _convertir_historial(historial_db) #Llamamos a la funcion que acabamos de crear arriba para que nos devuelva el array de objetos types
 
     # Iniciamos el chat con el historial previo de la conversación, cada vez que el usuario envia un mensaje, le pasamos la conversacion entera
     try:
-        chat = cliente.chats.create(model="gemini-2.0-flash", history=historial)
+        config = types.GenerateContentConfig(system_instruction=system_prompt) if system_prompt else None
+        chat = cliente.chats.create(model="gemini-2.0-flash", history=historial, config=config)
         respuesta = chat.send_message(mensaje_nuevo)
         return respuesta.text
+    
     except Exception as e:
         # El SDK lanza una excepción cuando la API devuelve un error (429, 500, etc.)
         # La capturamos aquí para escribir en el log, y luego la relanzamos con "raise"

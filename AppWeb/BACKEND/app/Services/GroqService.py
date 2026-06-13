@@ -19,9 +19,27 @@ def _convertir_historial(mensajes_db):
     return historial
 
 
-def llamar_groq(historial_db, mensaje_nuevo: str) -> str:
+def ping_groq() -> bool:
+    try:
+        cliente = Groq(api_key=settings.GROQ_API_KEY)
+        cliente.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": "hi"}],
+            max_tokens=1
+        )
+        return True
+    except Exception:
+        return False
+
+
+def llamar_groq(historial_db, mensaje_nuevo: str, system_prompt: str = "") -> str:
     cliente = Groq(api_key=settings.GROQ_API_KEY)
-    historial = _convertir_historial(historial_db)
+
+    # Groq acepta un mensaje de sistema como primer elemento del historial con role='system'
+    historial = []
+    if system_prompt:
+        historial.append({"role": "system", "content": system_prompt})
+    historial += _convertir_historial(historial_db)
     historial.append({"role": "user", "content": mensaje_nuevo})
 
     try:
@@ -30,6 +48,7 @@ def llamar_groq(historial_db, mensaje_nuevo: str) -> str:
             messages=historial
         )
         return respuesta.choices[0].message.content
+    
     except Exception as e:
         # El SDK lanza una excepción cuando la API devuelve un error (429, 500, etc.)
         # La capturamos aquí para escribir en el log, y luego la relanzamos con "raise"

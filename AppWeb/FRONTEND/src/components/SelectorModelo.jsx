@@ -24,7 +24,25 @@ function getNombreModelo(modeloId) {
 export default function SelectorModelo({ modeloActual, onCambiar }) {
   const [abierto, setAbierto] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [estadoModelo, setEstadoModelo] = useState('comprobando');
   const wrapperRef = useRef(null);
+
+
+  //Esto consume 1 token de la IA, implementar en el futuro caching con REDIS
+  useEffect(function () {
+    setEstadoModelo('comprobando');
+    apiClient.get('/mensajes/health')
+      .then(function (res) {
+        if (res.data.estado === 'ok') {
+          setEstadoModelo('ok');
+        } else {
+          setEstadoModelo('error');
+        }
+      })
+      .catch(function () {
+        setEstadoModelo('error');
+      });
+  }, [modeloActual]);
 
 
   //Cierra el panel cuando el usuario hace click fuera del componente
@@ -59,6 +77,15 @@ export default function SelectorModelo({ modeloActual, onCambiar }) {
   }
 
 
+  let dotClass = styles.dot + ' ';
+  if (estadoModelo === 'ok') {
+    dotClass = dotClass + styles.dotOk;
+  } else if (estadoModelo === 'error') {
+    dotClass = dotClass + styles.dotError;
+  } else {
+    dotClass = dotClass + styles.dotComprobando;
+  }
+
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       <div className={styles.badgeWrapper}>
@@ -89,7 +116,7 @@ export default function SelectorModelo({ modeloActual, onCambiar }) {
         )}
 
         <button className={styles.badge} onClick={function () { setAbierto(!abierto); }}>
-          <span className={styles.dot} />
+          <span className={dotClass} />
           <div className={styles.texto}>
             <span className={styles.label}>Modelo</span>
             <span className={styles.nombre}>{getNombreModelo(modeloActual) || '...'}</span>

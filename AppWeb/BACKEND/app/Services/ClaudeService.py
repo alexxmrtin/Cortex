@@ -23,20 +23,38 @@ def _convertir_historial(mensajes_db):
     return historial
 
 
-def llamar_claude(historial_db, mensaje_nuevo: str) -> str:
+def ping_claude() -> bool:
+    try:
+        cliente = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        cliente.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1,
+            messages=[{"role": "user", "content": "hi"}]
+        )
+        return True
+    except Exception:
+        return False
+
+
+def llamar_claude(historial_db, mensaje_nuevo: str, system_prompt: str = "") -> str:
     # Se instancia aquí dentro (no a nivel de módulo) para que el backend arranque aunque la clave esté vacía, si queremos integrar en el futuro claude, tenemos que borrar esto, descomentarlo arriba y poner la API key en el .env
     cliente = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-    
+
     historial = _convertir_historial(historial_db)
     historial.append({"role": "user", "content": mensaje_nuevo})
 
     try:
-        respuesta = cliente.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            messages=historial
-        )
+        kwargs = {
+            "model": "claude-sonnet-4-6",
+            "max_tokens": 1024,
+            "messages": historial
+        }
+        if system_prompt:
+            kwargs["system"] = system_prompt
+        
+        respuesta = cliente.messages.create(**kwargs)
         return respuesta.content[0].text
+    
     except Exception as e:
         # El SDK lanza una excepción cuando la API devuelve un error (429, 500, etc.)
         # La capturamos aquí para escribir en el log, y luego la relanzamos con "raise"

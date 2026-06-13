@@ -1,21 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import styles from '../../styles/CentroIA.module.css';
 import apiClient from '../../services/api';
 
 export default function ConversacionIA() {
   const { id } = useParams(); //Id de la conversacion activa, leido de la URL /centroIA/conversacion/:id
 
-  const [mensajes, setMensajes] = useState([]);
-  const [input, setInput] = useState('');
-  const [cargando, setCargando] = useState(false);
+  const [mensajes, setMensajes] = useState([]); //Array que guarda los mensajes de la conversacion en formato { rol: 'usuario' o 'ia', texto: '...' }
+  const [input, setInput] = useState(''); //texto que escribe el usuario 
+  const [cargando, setCargando] = useState(false); //Interruptor para saber si la ia esta constando o no
   const [error, setError] = useState('');
 
-  // useRef para hacer scroll automático al fondo del chat cuando llega un mensaje nuevo
+  // useRef para hacer scroll automático al fondo del chat cuando llega un mensaje nuevo, es como un ancla que pones al final de la conversacion
   const mensajesEndRef = useRef(null);
 
 
-  // Carga los mensajes de esta conversación desde la API al entrar, y cada vez que cambia el id
+  // Carga los mensajes de esta conversación desde la API al entrar, y cada vez que cambia el id de la conversacion
   useEffect(function () {
 
     async function cargarMensajes() {
@@ -36,12 +37,13 @@ export default function ConversacionIA() {
   }, [id]);
 
 
-  // Scroll automático al fondo cada vez que llega un mensaje nuevo
+  // Scroll automático al fondo cada vez que llega un mensaje nuevo, cada vez que cambia el estado mensajes se ejecuta un scroll usando ese input invisible o ancla al final de la conversacion
   useEffect(function () {
     if (mensajesEndRef.current) {
       mensajesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [mensajes]);
+
 
 
   
@@ -55,7 +57,7 @@ export default function ConversacionIA() {
     setCargando(true);
 
     try {
-      // Llama al backend, que guarda el mensaje, llama a Gemini y devuelve la respuesta de la IA
+      // Llama al backend, que guarda el mensaje, llama a la IA y devuelve su respuesta
       const respuesta = await apiClient.post('/mensajes/conversacion/' + id + '/chat', { contenido: texto });
       setMensajes(function (prev) { return [...prev, { rol: 'ia', texto: respuesta.data.contenido }]; });
     } 
@@ -78,39 +80,62 @@ export default function ConversacionIA() {
   }
 
 
+  //Este bloque prepara lo que se va a enseñar en la conversacion, recorremos el array mensajes y dependiendo de si el rol es ia o usuario le aplica un estilo u otro
   const itemsMensajes = mensajes.map(function (m, i) {
     const claseContenedor = m.rol === 'usuario' ? styles.mensajeUsuario : styles.mensajeIA;
 
-    const avatarIA = m.rol === 'ia' ? (
-      <div className={styles.iaAvatar}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
-        </svg>
-      </div>
-    ) : null;
+    let avatarIA = null; // Empezamos asumiendo que no hay avatar (como el usuario)
+    
+    if (m.rol === 'ia') {
+      avatarIA = (
+        <div className={styles.iaAvatar}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
+          </svg>
+        </div>
+      );
+    }
+
+    // Decidimos qué renderizar dentro de la burbuja
+    let contenidoBurbuja;
+    if (m.rol === 'ia') {
+      // Necesitamos ReactMarkdown ya que algunsa ias como Llama utilizan este formato de texto
+      contenidoBurbuja = <ReactMarkdown>{m.texto}</ReactMarkdown>;
+    } else {
+      contenidoBurbuja = m.texto;
+    }
 
     return (
       <div key={i} className={claseContenedor}>
         {avatarIA}
-        <div className={styles.mensajeBurbuja}>{m.texto}</div>
+        <div className={styles.mensajeBurbuja}>
+          {contenidoBurbuja}
+        </div>
       </div>
     );
   });
 
 
-  const animacionCargando = cargando ? (
-    <div className={styles.mensajeIA}>
-      <div className={styles.iaAvatar}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
-        </svg>
+  //Si el estado cargando es true, dibuja un 
+  let animacionCargando = null; // Por defecto, no mostramos nada
+  
+  if (cargando) {
+    animacionCargando = (
+      <div className={styles.mensajeIA}>
+        <div className={styles.iaAvatar}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
+          </svg>
+        </div>
+        <div className={styles.mensajeBurbuja + ' ' + styles.cargando}>
+          <span/><span/><span/>
+        </div>
       </div>
-      <div className={styles.mensajeBurbuja + ' ' + styles.cargando}>
-        <span/><span/><span/>
-      </div>
-    </div>
-  ) : null;
+    );
+  }
 
+
+  //Renderizado
   return (
     <div className={styles.chat}>
       <div className={styles.mensajes}>

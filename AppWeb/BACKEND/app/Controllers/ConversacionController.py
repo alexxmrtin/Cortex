@@ -55,7 +55,8 @@ def crear_conversacion(datos: ConversacionCrear, authorization: str = Header(...
 
     conversacion = Conversacion(
         titulo=titulo,
-        usuario_id=usuario.id
+        usuario_id=usuario.id,
+        proyecto_id=datos.proyecto_id
     )
 
     db.add(conversacion)

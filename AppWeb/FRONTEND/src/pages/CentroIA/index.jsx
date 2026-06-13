@@ -29,6 +29,7 @@ function formatearFecha(fechaISO) {
 export default function CentroIA() {
   const [usuario, setUsuario] = useState(null);
   const [conversaciones, setConversaciones] = useState([]);
+  const [proyectos, setProyectos] = useState({}); // mapa id → nombreproyecto
   const navigate = useNavigate();
 
   //Como el id de la url esta montado en la pagina hija, tenemos que usar esta tecnica para obtener el id en la pagina padre
@@ -36,6 +37,7 @@ export default function CentroIA() {
   const conversacionActivaId = match?.params?.id;
 
   useEffect(function () {
+    
     async function cargarUsuario() {
       try {
         const respuesta = await apiClient.get('/usuarios/me');
@@ -44,7 +46,20 @@ export default function CentroIA() {
         console.error('Error al cargar el usuario', err);
       }
     }
+    
+    async function cargarProyectos() {
+      try {
+        const respuesta = await apiClient.get('/proyectos/');
+        const mapa = {};
+        respuesta.data.forEach(function (p) { mapa[p.id] = p.nombreproyecto; });
+        setProyectos(mapa);
+      } catch (err) {
+        console.error('Error al cargar los proyectos', err);
+      }
+    }
+    
     cargarUsuario();
+    cargarProyectos();
   }, []);
 
   // Se recarga cada vez que cambia la conversación activa, así aparece en el sidebar justo después de crear una nueva
@@ -104,8 +119,13 @@ export default function CentroIA() {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
         <span className={styles.sidebarItemText}>
-          <span>{conv.titulo}</span>
-          <span className={styles.sidebarItemFecha}>{formatearFecha(conv.fechaCreacion)}</span>
+          <span className={styles.sidebarItemTitulo}>
+            <span className={styles.sidebarItemTituloTexto}>{conv.titulo}</span>
+            <span className={styles.sidebarItemFecha}>{formatearFecha(conv.fechaCreacion)}</span>
+          </span>
+          {conv.proyecto_id && proyectos[conv.proyecto_id] && (
+            <span className={styles.sidebarItemProyecto}>{proyectos[conv.proyecto_id]}</span>
+          )}
         </span>
         <button className={styles.sidebarItemBorrar} onClick={function (e) { borrarConversacion(e, conv.id); }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

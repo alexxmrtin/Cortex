@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 def log_error_servicio(servicio: str, error: Exception):
-    carpeta = f"Logs/ServicesLogs/{servicio}+Logs"
+    carpeta = f"Logs/ServicesLogs/{servicio}Logs"
     os.makedirs(carpeta, exist_ok=True)
 
     ruta = f"{carpeta}/{servicio.lower()}.txt"

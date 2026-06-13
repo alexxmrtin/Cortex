@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../../styles/CentroIA.module.css';
 import apiClient from '../../services/api';
@@ -14,8 +14,17 @@ export default function EmptyStateIA() {
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  const [proyectos, setProyectos] = useState([]);
+  const [proyectoId, setProyectoId] = useState('');
 
-  
+  // Cargamos los proyectos del usuario para que pueda vincular la conversación a uno
+  useEffect(function () {
+    apiClient.get('/proyectos/').then(function (res) {
+      setProyectos(res.data);
+    }).catch(function () {});
+  }, []);
+
+
   // Crea una conversación, llama al chat de IA con el primer mensaje y navega a ella.
   // Al llegar a ConversacionIA, ya hay respuesta de Gemini cargada en la BD.
   async function handleMensajeInicio(texto) {
@@ -23,17 +32,24 @@ export default function EmptyStateIA() {
     let conversacionId = null; //Guardamos el id aqui para poder acceder a el en el catch
 
     try {
-      //Obtenemos del input del usuario las primeras 4 palabras, si hay 4 o mas palabras añade 3 puntos al dinal
+      //Obtenemos del input del usuario las primeras 4 palabras, si hay 4 o mas palabras añade 3 puntos al final
       const palabras = texto.split(' ');
-      let titulo = palabras.slice(0, 4).join(' ');
+      let titulo = palabras.slice(0, 3).join(' ');
       if (palabras.length >= 4) {
         titulo = titulo + '...';
       }
 
-      const respuesta = await apiClient.post('/conversaciones/', { titulo: titulo }); //Creamos una nueva conversacion en la bd
+      //Creamos la conversacion, si el usuario a modificado el estado proyectoId usando el input grafico de seleccion, creamos una conversacion con el id del proyecto, para que tenga los archivos disponibles
+      const cuerpo = { titulo: titulo };
+      if (proyectoId) {
+        cuerpo.proyecto_id = parseInt(proyectoId);
+      }
+
+      const respuesta = await apiClient.post('/conversaciones/', cuerpo); //Creamos una nueva conversacion en la bd
       conversacionId = respuesta.data.id;
 
-      // Usamos el endpoint de chat: guarda el mensaje del usuario, llama a Gemini y guarda la respuesta
+
+      // Usamos el endpoint de chat: guarda el mensaje del usuario, llama a la IA y guarda la respuesta
       await apiClient.post('/mensajes/conversacion/' + conversacionId + '/chat', { contenido: texto });
 
       navigate('/centroIA/conversacion/' + conversacionId); //Navegamos a la conversacion, ConversacionIA cargara el mensaje desde la API
@@ -45,7 +61,7 @@ export default function EmptyStateIA() {
       else if (err.response.status == 429) {
         setError(err.response.data.detail); //El usuario ha superado las 30 peticiones diarias
       }
-       else {
+      else {
         setError('No se pudo conectar con el servidor.');
       }
 
@@ -77,6 +93,7 @@ export default function EmptyStateIA() {
         </div>
         <h2 className={styles.emptyTitle}>Asistente IA</h2>
         <p className={styles.emptySubtitle}>Inicia una nueva conversación o selecciona una del historial</p>
+
         <div className={styles.sugerencias}>
           {SUGERENCIAS.map(function (s) {
             return (
@@ -86,21 +103,38 @@ export default function EmptyStateIA() {
             );
           })}
         </div>
+
       </div>
 
       {/* Mensaje de error visible para el usuario */}
       {error && <p className={styles.errorMensaje}>{error}</p>}
 
-      {/* Input fijo en la parte inferior*/}
-      <form 
-        className={styles.inputArea} 
-        onSubmit={function (e) { 
-            e.preventDefault();
+      {/* Selector de proyecto — solo aparece si el usuario tiene proyectos */}
+      {proyectos.length > 0 && (
+        <div className={styles.selectorProyecto}>
+          <label className={styles.selectorProyectoLabel}>Contexto de proyecto</label>
+          <select
+            className={styles.selectorProyectoSelect}
+            value={proyectoId}
+            onChange={function (e) { setProyectoId(e.target.value); }}
+            disabled={cargando}
+          >
+            <option value="">Sin contexto</option>
+            {proyectos.map(function (p) {
+              return <option key={p.id} value={p.id}>{p.nombreproyecto}</option>;
+            })}
+          </select>
+        </div>
+      )}
 
-            //Si no esta vacio, se ejecuta la funcion handleSugerencia con el contenido del estado Input
-            if(input.trim()){ 
-              handleMensajeInicio(input.trim()); 
-            }
+      {/* Input fijo en la parte inferior */}
+      <form
+        className={styles.inputArea}
+        onSubmit={function (e) {
+          e.preventDefault();
+          if (input.trim()) {
+            handleMensajeInicio(input.trim());
+          }
         }}>
 
         <input
@@ -108,11 +142,11 @@ export default function EmptyStateIA() {
           type="text"
           placeholder="Escribe tu mensaje..."
           value={input}
-          onChange={function (e) { setInput(e.target.value); setError(''); } /*El valor que escribe el usuario en el input lo ponemos en el estado Input */}
+          onChange={function (e) { setInput(e.target.value); setError(''); }}
           disabled={cargando}
         />
 
-        <button className={styles.enviarBtn} type="submit" disabled={!input.trim() || cargando /*Si esta vacio o cargando se deshabilita el boton*/}>
+        <button className={styles.enviarBtn} type="submit" disabled={!input.trim() || cargando}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
