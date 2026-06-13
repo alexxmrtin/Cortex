@@ -11,6 +11,7 @@ class Usuario(Base):
     contrasena = Column(String, nullable=False)
     fotoPerfil = Column(String, nullable=True)
     tema = Column(String, default="claro")
+    modeloIA = Column(String, default="gemini-2.0-flash")  # Modelo de IA seleccionado por el usuario
 
     # Relaciones con otras tablas
     # cascade="all, delete-orphan" hace que al borrar un usuario, SQLAlchemy borre automaticamente todos sus proyectos, servicios y conversaciones

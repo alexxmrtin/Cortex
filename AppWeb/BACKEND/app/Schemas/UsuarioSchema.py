@@ -18,6 +18,7 @@ class UsuarioRespuesta(BaseModel):
     email: str
     fotoPerfil: str | None #El campo es necesario enviarlo, aunque sea con None
     tema: str
+    modeloIA: str
 
     model_config = {"from_attributes": True} # Permite a Pydantic leer datos directamente de un objeto SQLAlchemy, sin esto esperaria un diccionario y daria error
 
@@ -26,6 +27,7 @@ class UsuarioActualizar(BaseModel):
     nombreUsuario: str | None = None #El campo es opcional enviarlo
     fotoPerfil: str | None = None
     tema: str | None = None
+    modeloIA: str | None = None  # 'gemini-2.0-flash' | 'claude-sonnet-4-6' | ...
 
 # Datos que se reciben para cambiar la contrasena
 class CambiarContrasena(BaseModel):

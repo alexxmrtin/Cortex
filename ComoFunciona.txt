@@ -43,6 +43,74 @@ FLUJO: SUBIR UN PROYECTO
 
 
 ================================================================================
+FLUJO: CHAT CON IA (CentroIA)
+================================================================================
+
+El chat usa Google Gemini 1.5 Flash como modelo de IA. La clave API está en el
+.env del backend (GEMINI_API_KEY) y nunca llega al frontend.
+
+--- CREAR UNA CONVERSACIÓN (desde EmptyStateIA) ---
+
+1. FRONTEND — EmptyStateIA.jsx
+   - El usuario escribe un mensaje o pulsa una sugerencia.
+   - Se llama a handleSugerencia(texto).
+
+2. FRONTEND — POST /conversaciones/  { titulo: texto }
+   - Se crea la conversación en la BD con el mensaje como título.
+   - El backend devuelve el objeto conversación con su id.
+
+3. FRONTEND — POST /mensajes/conversacion/{id}  { contenido: texto, rol: 'usuario' }
+   - Se guarda el primer mensaje del usuario en la BD (sin llamar a la IA aún).
+   - Esto es para que cuando ConversacionIA cargue los mensajes via GET, ya esté ahí.
+
+4. FRONTEND — navega a /centroIA/conversacion/{id}
+   - ConversacionIA carga los mensajes con GET /mensajes/conversacion/{id}
+     y los muestra. En este punto solo hay el mensaje del usuario, sin respuesta.
+
+--- ENVIAR UN MENSAJE (desde ConversacionIA) ---
+
+1. FRONTEND — ConversacionIA.jsx — enviarMensaje()
+   - El usuario escribe y pulsa enviar.
+   - El mensaje del usuario se añade al estado local (para mostrarlo al instante).
+   - Se muestra la animación de los tres puntos (cargando = true).
+
+2. FRONTEND — POST /mensajes/conversacion/{id}/chat  { contenido: texto }
+   - Solo se manda el contenido. El rol lo asigna el backend (siempre 'usuario').
+
+3. BACKEND — MensajeController.py — chat_ia()
+   a) Verifica que la conversación pertenece al usuario (token JWT).
+   b) Guarda el mensaje del usuario en la BD (Mensaje con rol='usuario').
+   c) Recupera todo el historial de mensajes de esa conversación desde la BD.
+   d) Llama a GeminiService.llamar_gemini(historial_previo, mensaje_nuevo).
+
+4. BACKEND — GeminiService.py — llamar_gemini()
+   - Convierte los mensajes de la BD al formato que espera Gemini:
+     · rol='usuario' → role='user'
+     · rol='ia'      → role='model'
+     · cada mensaje se convierte en types.Content(role, parts=[types.Part(text)])
+   - Crea un chat con cliente.chats.create(model, history=historial_previo).
+   - Envía el mensaje nuevo con chat.send_message(mensaje_nuevo).
+   - Gemini recibe el historial completo → sus respuestas tienen contexto de toda
+     la conversación, no solo del último mensaje.
+   - Devuelve respuesta.text (el texto plano de la respuesta).
+
+5. BACKEND — MensajeController.py (continúa)
+   e) Guarda la respuesta de la IA en la BD (Mensaje con rol='ia').
+   f) Devuelve ese objeto Mensaje al frontend.
+
+6. FRONTEND — ConversacionIA.jsx (continúa)
+   - Añade la respuesta al estado local de mensajes.
+   - Desaparece la animación de carga.
+   - useEffect con dependencia [mensajes] hace scroll automático al fondo.
+
+--- POR QUÉ SE GUARDA EL HISTORIAL EN LA BD ---
+   Gemini no recuerda conversaciones entre llamadas. Cada vez que el usuario
+   manda un mensaje, el backend recupera TODOS los mensajes previos de la BD
+   y se los manda a Gemini como historial. Así Gemini tiene contexto completo
+   y puede responder con coherencia aunque pasen días entre mensajes.
+
+
+================================================================================
 MODELO DE DATOS (tablas BD)
 ================================================================================
 

@@ -121,6 +121,9 @@ def actualizar_usuario(datos: UsuarioActualizar, authorization: str = Header(...
     if datos.tema is not None:
         usuario.tema = datos.tema
 
+    if datos.modeloIA is not None:
+        usuario.modeloIA = datos.modeloIA
+
     db.commit()
     db.refresh(usuario)
     db.close()
