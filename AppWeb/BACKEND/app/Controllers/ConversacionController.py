@@ -36,10 +36,22 @@ def crear_conversacion(datos: ConversacionCrear, authorization: str = Header(...
 
     db = SessionLocal()
 
+
+    # Si el usuario ya tiene 20 conversaciones, borramos la más antigua para hacer hueco a la nueva
+    # SELECT * FROM Conversacion WHERE usuario_id = usuario.id ORDER BY fechaCreacion ASC LIMIT 1
+    total = db.query(Conversacion).filter(Conversacion.usuario_id == usuario.id).count()
+    if total >= 20:
+        # SELECT * FROM Conversacion WHERE usuario_id = usuario.id ORDER BY fechaCreacion ASC LIMIT 1
+        mas_antigua = db.query(Conversacion).filter(Conversacion.usuario_id == usuario.id).order_by(Conversacion.fechaCreacion.asc()).first()
+        db.delete(mas_antigua)
+        db.commit()
+
+
     try:
         titulo = sanitizar(datos.titulo)
     except ValueError:
         titulo = f"Conversacion {datetime.now().strftime('%d/%m/%Y %H:%M')}" # Si el titulo contiene caracteres peligrosos, usamos un titulo por defecto con la fecha actual
+
 
     conversacion = Conversacion(
         titulo=titulo,

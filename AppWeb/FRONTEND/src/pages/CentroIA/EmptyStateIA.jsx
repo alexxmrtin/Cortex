@@ -38,13 +38,21 @@ export default function EmptyStateIA() {
 
       navigate('/centroIA/conversacion/' + conversacionId); //Navegamos a la conversacion, ConversacionIA cargara el mensaje desde la API
     } catch (err) {
-      console.error('Error al crear la conversación', err);
-      
+
+      if (err.response.status == 500) {
+        setError(`${err.response.data.detail.split(' ').slice(0, 5).join(' ')}. El modelo no esta disponible en este momento`);
+      }
+      else if (err.response.status == 429) {
+        setError(err.response.data.detail); //El usuario ha superado las 30 peticiones diarias
+      }
+       else {
+        setError('No se pudo conectar con el servidor.');
+      }
+
       // Si la conversacion ya fue creada pero el chat fallo, la borramos para no dejarla huerfana en la BD
       if (conversacionId) {
         await apiClient.delete('/conversaciones/' + conversacionId).catch(function() {});
       }
-      setError('No se pudo iniciar la conversación. Inténtalo de nuevo.');
       setCargando(false);
     }
   }

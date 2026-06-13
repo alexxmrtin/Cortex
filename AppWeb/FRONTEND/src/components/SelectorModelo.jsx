@@ -6,6 +6,7 @@ import styles from '../styles/SelectorModelo.module.css';
 const MODELOS = [
   { id: 'gemini-2.0-flash', nombre: 'Gemini 2.0 Flash', proveedor: 'Google' },
   { id: 'claude-sonnet-4-6', nombre: 'Claude Sonnet 4.6', proveedor: 'Anthropic' },
+  { id: 'llama-3.3-70b-versatile', nombre: 'Llama 3.3 70B', proveedor: 'Groq' },
 ];
 
 //Esta funcion se usa para la conversion, el usuario guarda el MODELOS.id en la base de datos, mientras que en el dom vamos a usar MODELOS.nombre, por tanto esta funcion le pasamos el modelo de la base de datos y nos devuelve el nombre

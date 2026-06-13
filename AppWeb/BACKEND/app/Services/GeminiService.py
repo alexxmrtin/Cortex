@@ -1,6 +1,7 @@
 from google import genai
 from google.genai import types
 from app.Core.config import settings
+from app.Helpers.Log import log_error_servicio
 
 #Este archivo conecta este backend con la API de Gemini para usar su ia
 
@@ -33,8 +34,13 @@ def llamar_gemini(historial_db, mensaje_nuevo: str) -> str:
 
 
     # Iniciamos el chat con el historial previo de la conversación, cada vez que el usuario envia un mensaje, le pasamos la conversacion entera
-    chat = cliente.chats.create(model="gemini-2.0-flash", history=historial)
-
-    respuesta = chat.send_message(mensaje_nuevo)
-
-    return respuesta.text
+    try:
+        chat = cliente.chats.create(model="gemini-2.0-flash", history=historial)
+        respuesta = chat.send_message(mensaje_nuevo)
+        return respuesta.text
+    except Exception as e:
+        # El SDK lanza una excepción cuando la API devuelve un error (429, 500, etc.)
+        # La capturamos aquí para escribir en el log, y luego la relanzamos con "raise"
+        # para que el controlador la siga recibiendo y haga su rollback normal
+        log_error_servicio("Gemini", e)
+        raise

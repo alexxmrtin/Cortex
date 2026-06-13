@@ -9,6 +9,8 @@ pydantic-settings==2.6.1 #Leer variables de entorno desde el .env con tipado
 aiofiles==24.1.0 #Leer y escribir archivos de forma asincrona
 email-validator==2.2.0 #Validar que un email tiene formato correcto
 google-genai #SDK de Google para llamar a Gemini (nuevo paquete, reemplaza google-generativeai)
+anthropic #SDK de Anthropic para llamar a Claude
+groq #SDK de Groq para llamar a Llama
 
 #Dependencias del backend
 
