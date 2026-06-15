@@ -52,6 +52,7 @@
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 500;
+  cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -156,4 +157,40 @@
   background: #888;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+/* ── Iconos de accion (editar / borrar) que aparecen al pasar el raton ── */
+.servicioAcciones {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  opacity: 0;                 /* ocultos por defecto; ocupan espacio para que el punto no salte */
+  transition: opacity 0.15s;
+}
+
+.sidebarItem:hover .servicioAcciones {
+  opacity: 1;                 /* visibles al pasar el raton por la fila */
+}
+
+.servicioAccion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 3px;
+  border-radius: 5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.servicioAccion:hover {
+  background: #e2e2e2;
+  color: #333;
+}
+
+.servicioAccionBorrar:hover {
+  background: #fdecec;
+  color: #e03e3e;
 }

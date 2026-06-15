@@ -141,16 +141,12 @@ export default function ServicesPanel() {
         </div>
       </div>
 
-      <div className={styles.descripcionBloque}>
-        <label className={styles.descripcionLabel} htmlFor="descripcion">Descripción</label>
-        <textarea
-          id="descripcion"
-          className={styles.descripcionTexto}
-          placeholder="Escribe una descripción del servicio..."
-          value={servicio.descripcion || ''}
-          onChange={function(e) { setServicio({ ...servicio, descripcion: e.target.value }); }}
-        />
-      </div>
+      {servicio.descripcion && (
+        <div className={styles.descripcionBloque}>
+          <span className={styles.descripcionLabel}>Descripción</span>
+          <p className={styles.descripcionValor}>{servicio.descripcion}</p>
+        </div>
+      )}
 
     </div>
   );

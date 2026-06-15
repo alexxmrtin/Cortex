@@ -93,6 +93,13 @@ export default function CentroIA() {
   // Si se borra la conversación activa, vuelve al EmptyState.
   async function borrarConversacion(e, convId) {
     e.stopPropagation(); // evita que el click llegue al div padre y navegue a la conversacion
+
+    // Pedimos confirmacion antes de borrar, porque es una accion irreversible
+    const confirmado = window.confirm('¿Seguro que quieres borrar esta conversación? Esta acción no se puede deshacer.');
+    if (!confirmado) {
+      return;
+    }
+
     try {
       await apiClient.delete('/conversaciones/' + convId);
       if (String(convId) === conversacionActivaId) {

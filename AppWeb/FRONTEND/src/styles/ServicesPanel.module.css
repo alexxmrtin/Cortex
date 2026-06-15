@@ -150,24 +150,11 @@
   color: #aaa;
 }
 
-.descripcionTexto {
-  width: 100%;
-  min-height: 100px;
-  padding: 0.7rem 0.9rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
+/* Descripción en modo solo lectura (la edicion se hace en ActualizarServicio) */
+.descripcionValor {
+  margin: 0;
   font-size: 0.9rem;
   color: #333;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-}
-
-.descripcionTexto:focus {
-  border-color: #c0bfc2;
-}
-
-.descripcionTexto::placeholder {
-  color: #bbb;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }

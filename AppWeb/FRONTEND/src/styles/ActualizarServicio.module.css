@@ -1,0 +1,134 @@
+/* Estilos de la pagina ActualizarServicio: misma estructura visual que ServicesPanel,
+   pero con los valores convertidos en campos editables (input / select / textarea). */
+
+.panel {
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.titulo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+  padding-bottom: 1.2rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+/* ── Rejilla de campos ── */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 2rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.infoLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #aaa;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  background: white;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.input:focus,
+.select:focus {
+  border-color: #c0bfc2;
+}
+
+.input::placeholder {
+  color: #bbb;
+}
+
+/* ── Descripción ── */
+.descripcionBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.descripcionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #aaa;
+}
+
+.descripcionTexto {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.7rem 0.9rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #333;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.descripcionTexto:focus {
+  border-color: #c0bfc2;
+}
+
+.descripcionTexto::placeholder {
+  color: #bbb;
+}
+
+/* ── Mensaje de error ── */
+.error {
+  padding: 0.6rem 0.9rem;
+  background: #fdecec;
+  border: 1.5px solid #e03e3e;
+  border-radius: 10px;
+  color: #c0392b;
+  font-size: 0.85rem;
+}
+
+/* ── Botón de guardar ── */
+.submit {
+  align-self: flex-start;
+  padding: 0.6rem 1.4rem;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.submit:hover {
+  background: #555;
+}

@@ -13,6 +13,7 @@ import ConversacionIA from './pages/CentroIA/ConversacionIA';
 import Servicios from './pages/Servicios/index';
 import ServicesPanel from './pages/Servicios/ServicesPanel';
 import AgregarServicio from './pages/Servicios/AgregarServicio';
+import ActualizarServicio from './pages/Servicios/ActualizarServicio';
 import Ajustes from './pages/Ajustes';
 import './App.css';
 
@@ -42,6 +43,7 @@ export default function App() {
           
           <Route path='/servicios' element={<Servicios/>}>
             <Route path=':id' element={<ServicesPanel />} />
+            <Route path=':id/actualizar' element={<ActualizarServicio />} />
             <Route path='agregarServicio' element={<AgregarServicio />} />
           </Route>
 

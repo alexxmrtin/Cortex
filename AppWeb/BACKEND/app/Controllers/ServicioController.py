@@ -100,7 +100,11 @@ def actualizar_servicio(servicio_id: int, datos: ServicioActualizar, authorizati
         servicio.tipo = datos.tipo
     if datos.estado is not None:
         servicio.estado = datos.estado
-    if datos.proyectoAsociado is not None:
+
+    # Para proyectoAsociado miramos si el campo VINO en la peticion (model_fields_set), no si es None.
+    # Asi un null explicito (el usuario eligio "Sin proyecto") desvincula el proyecto,
+    # pero un PATCH que no incluye el campo (ej: cambiar solo el estado) lo deja intacto.
+    if "proyectoAsociado" in datos.model_fields_set:
         servicio.proyectoAsociado = datos.proyectoAsociado
     if datos.host is not None:
         servicio.host = datos.host
