@@ -16,7 +16,7 @@
   border: 5px solid #c0bfc2;
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 1.2rem 1rem;
-  min-height: 500px;
+  min-height: 700px;
 }
 
 .sidebarLogo {
@@ -184,6 +184,14 @@
 .panelIACerrar:hover {
   background: #f4f4f4;
   color: #333;
+}
+
+/* Aviso en rojo cuando se abre el panel de IA sin proyecto seleccionado */
+.avisoProyecto {
+  margin: 0 0 0.3rem;
+  padding: 0.2rem 0.8rem;
+  font-size: 0.8rem;
+  color: #e05555;
 }
 
 /* Selector de modelo dentro de la sidebar, justo encima del perfil de usuario */

@@ -158,20 +158,54 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
         conversacion.archivos_contexto = ",".join(partes_csv)
         db.commit()
 
-        # Cargamos los archivos acumulados respetando el orden de ids_acumulados (los mas antiguos primero)
+        # Buscamos el README del proyecto SIEMPRE (en cada mensaje), para tenerlo como contexto perpetuo.
+        # Lo manejamos aparte de la cola para que el tope de 10 nunca lo expulse.
+        id_readme = None
+        for archivo in todos_archivos:
+            if os.path.basename(archivo.rutaRelativa).lower() == "readme.txt":
+                id_readme = archivo.id
+                break
+
+
+        ###########################################################################################
+        # Orden de PRIORIDAD para gastar el presupuesto de caracteres (lo mas importante primero):
+        #   1. Archivos que el usuario menciona en ESTE mensaje -> nunca se quedan fuera
+        #   2. El README                                        -> contexto perpetuo del proyecto
+        #   3. El resto de archivos acumulados, del mas reciente al mas antiguo
+        # Si al final no cabe todo, se sacrifican los menos prioritarios (los acumulados mas antiguos).
+        ids_ordenados = []
+        for id_archivo in ids_nuevos:
+            if id_archivo not in ids_ordenados:
+                ids_ordenados.append(id_archivo)
+        if id_readme is not None and id_readme not in ids_ordenados:
+            ids_ordenados.append(id_readme)
+        for id_archivo in reversed(ids_acumulados):
+            if id_archivo not in ids_ordenados:
+                ids_ordenados.append(id_archivo)
+
+        # Convertimos los ids en objetos archivo, respetando ese orden de prioridad
         archivos = []
-        for id_archivo in ids_acumulados:
+        for id_archivo in ids_ordenados:
             for archivo in todos_archivos:
                 if archivo.id == id_archivo:
                     archivos.append(archivo)
                     break
+        #############################################################################################
+        
 
         # Leemos el contenido de los archivos con un tope total de caracteres, para no superar el limite de tokens del modelo (sobre todo Llama via Groq, que da error 413 si el mensaje es muy grande).
-        # Recorremos del mas reciente al mas antiguo: si nos quedamos sin presupuesto, los que se quedan fuera son los archivos mas viejos (menos relevantes para el mensaje actual).
-        MAX_CARACTERES_CONTEXTO = 15000
+        # Como 'archivos' ya esta en orden de prioridad, lo recorremos tal cual (sin reversed): si se acaba el presupuesto, los que se quedan fuera son los menos prioritarios.
+        
+        # El tope depende del modelo: Gemini y Claude tienen ~1M tokens de contexto, asi que podemos darles mucho mas;
+        # Llama via Groq es el mas restrictivo (limites por peticion + error 413), por eso le dejamos un presupuesto mas bajo.
+        if usuario.modeloIA == "llama-3.3-70b-versatile":
+            MAX_CARACTERES_CONTEXTO = 30000
+        else:
+            MAX_CARACTERES_CONTEXTO = 60000
+        
         caracteres_usados = 0
         bloques = []
-        for archivo in reversed(archivos): #reversed() invierte el orden de un array
+        for archivo in archivos:
             # Si ya no queda presupuesto, paramos (los archivos restantes son aun mas antiguos)
             if caracteres_usados >= MAX_CARACTERES_CONTEXTO:
                 break
@@ -205,7 +239,7 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
             system_prompt = "\n".join(partes)
         else:
             # No se encontró ningún archivo: le indicamos a la IA que pida el nombre exacto
-            system_prompt = "Eres un asistente analizando un proyecto de código. No tienes acceso al contenido de ningún archivo en este momento. Si el usuario pregunta sobre un archivo concreto, pídele que mencione su nombre exacto para que puedas ayudarle y si necesitas mas contexto o informacion, le pides el nombre de los archivos necesarios."
+            system_prompt = "Eres un asistente analizando un proyecto de código. Solo tienes acceso al README del proyecto en caso de que exista el archivo. Si el usuario pregunta sobre un archivo concreto, pídele que mencione su nombre exacto para que puedas ayudarle y si necesitas mas contexto o informacion, le pides el nombre de los archivos necesarios."
 
         #---------------------------------------------------------------------------------------------------------------
 
