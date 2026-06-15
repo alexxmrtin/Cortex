@@ -72,6 +72,13 @@
   font-size: 0.95rem;
   font-weight: 500;
   transition: background 0.15s, color 0.15s;
+  /* Reset para que un <button> con esta clase se vea igual que un <Link> */
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
 }
 
 .sidebarItem:hover {
@@ -126,4 +133,61 @@
 
 .content {
   flex: 3;
+}
+
+/* ── Panel de IA (columna a la derecha) ── */
+.panelIA {
+  flex: 1.3;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 16px;
+  border: 5px solid #c0bfc2;
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+  height: calc(100vh - 140px);
+  overflow: hidden;
+}
+
+.panelIAHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.2rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.panelIATitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.panelIATitulo svg {
+  opacity: 0.7;
+}
+
+.panelIACerrar {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.panelIACerrar:hover {
+  background: #f4f4f4;
+  color: #333;
+}
+
+/* Selector de modelo dentro de la sidebar, justo encima del perfil de usuario */
+.sidebarModelo {
+  margin-top: auto;       /* empuja el selector (y el perfil) al fondo de la sidebar */
+  padding: 0.4rem 0.2rem 0.6rem;
 }

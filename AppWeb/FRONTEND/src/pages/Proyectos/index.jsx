@@ -3,13 +3,23 @@ import { Link, Outlet, useParams } from 'react-router-dom';
 import styles from '../../styles/Projects.module.css';
 import perfilNoDefinido from '../../assets/perfilNoDefinido.jpg';
 import apiClient from '../../services/api';
+import PanelConversacionIA from '../../components/PanelConversacionIA';
+import SelectorModelo from '../../components/SelectorModelo';
+
+
+// Titulo centinela con el que identificamos LA conversacion del panel de IA de cada proyecto.
+// Combinado con el proyecto_id, nos permite reutilizar siempre la misma conversacion por proyecto.
+const TITULO_PANEL_IA = 'Asistente del proyecto';
 
 
 export default function Projects() {
   const [proyectos, setProyectos] = useState([]);
   const [usuario, setUsuario] = useState(null);
+  const [panelAbierto, setPanelAbierto] = useState(false);        // controla si el panel de IA esta abierto
+  const [conversacionIaId, setConversacionIaId] = useState(null); // id de la conversacion del panel para este proyecto (null si aun no existe)
 
   const { id } = useParams(); //useParams lee el :id de la URL actual y la guarda en la variable, lo usamos para construir los links dinamicos de cada proyecto y asignar un estilo diferente al proyecto seleccionado
+
 
   
   useEffect(function() {
@@ -37,6 +47,77 @@ export default function Projects() {
     cargarUsuario();
   }, []); // Solo se ejecuta al montar el componente, el usuario no cambia mientras navega entre proyectos
 
+  //---------------------------------------------------------------------------------------------------------------
+
+  // Al cambiar de proyecto, buscamos si ya existe la conversacion del panel de IA para ese proyecto.
+  // Si existe, guardamos su id para que el panel cargue el historial; si no, queda null y se creara al primer mensaje.
+  useEffect(function () {
+    if (!id) {
+      return;
+    }
+
+    async function buscarConversacion() {
+      try {
+        const respuesta = await apiClient.get('/conversaciones/');
+
+        // Buscamos la conversacion del panel de este proyecto; si no hay, queda en null
+        let encontradaId = null;
+        for (let i = 0; i < respuesta.data.length; i++) {
+          const conv = respuesta.data[i];
+          if (conv.proyecto_id === Number(id) && conv.titulo.startsWith(TITULO_PANEL_IA)) {
+            encontradaId = conv.id;
+            break;
+          }
+        }
+        setConversacionIaId(encontradaId); // setState tras el await: no es sincrono dentro del efecto
+      } catch (err) {
+        console.error('Error al buscar la conversacion del proyecto', err);
+      }
+    }
+    buscarConversacion();
+  }, [id]);
+
+
+  // Funcion que le pasamos al panel para que cree la conversacion de este proyecto al enviar el primer mensaje.
+  // Devuelve el id de la conversacion recien creada (el panel lo necesita de vuelta).
+  async function crearConversacionProyecto() {
+    const respuesta = await apiClient.post('/conversaciones/', {
+      titulo: TITULO_PANEL_IA + ' ' + proyectoNombre,
+      proyecto_id: Number(id),
+    });
+    return respuesta.data.id;
+  }
+
+  // Actualiza en el estado local el modelo de IA cuando el usuario lo cambia en el selector.
+  // (El guardado en la BD lo hace SelectorModelo por dentro con un PATCH a /usuarios/me.)
+  function cambiarModelo(modeloId) {
+    setUsuario(function (anterior) {
+      return { ...anterior, modeloIA: modeloId };
+    });
+  }
+
+
+  // Abre el panel de IA si esta cerrado, y lo cierra si esta abierto
+  function alternarPanel() {
+    if (panelAbierto) {
+      setPanelAbierto(false);
+    } else {
+      setPanelAbierto(true);
+    }
+  }
+
+  // Nombre legible del modelo de IA del usuario (para mostrarlo en la cabecera del panel).
+  let nombreIA = null;
+  if (usuario) {
+    if (usuario.modeloIA === 'claude-sonnet-4-6') {
+      nombreIA = 'Claude Sonnet 4.6';
+    } else if (usuario.modeloIA === 'llama-3.3-70b-versatile') {
+      nombreIA = 'Llama 3.3 70B';
+    } else if (usuario.modeloIA === 'gemini-2.0-flash') {
+      nombreIA = 'Gemini 2.0 Flash';
+    }
+  }
+  //-----------------------------------------------------------------------------------------------------------
 
   //Este bloque construye los links de los proyectos en la sidebar, cada usuario tendra diferentes proyectos
   const itemsProyectos = [];
@@ -52,17 +133,31 @@ export default function Projects() {
     );
   }
 
+
+  // Nombre del proyecto activo
+  let proyectoNombre = null;
+  for (let i = 0; i < proyectos.length; i++) {
+    if (String(proyectos[i].id) === id) {
+      proyectoNombre = proyectos[i].nombreproyecto;
+      break;
+    }
+  }
+
   return (
     <div className={styles.layout}>
       <aside className={styles.sidebar}>
         
-        {/*Funcionalidad a desarrollar, abrir un panel a la derecha de la pagina con una interfaz donde poder preguntarle a la IA cosas sobre el proyecto, la IA debe tener el contexto del proyecto */}
-        <Link to="" className={styles.sidebarItem}>
+        {/* Boton que abre/cierra el panel de IA del proyecto seleccionado */}
+        <button
+          type="button"
+          className={styles.sidebarItem}
+          onClick={alternarPanel}
+        >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
             </svg>
-            Usar IA (En desarrollo...)
-          </Link>
+            Usar IA
+          </button>
           
           <Link to="/proyectos/agregarProyecto" className={styles.sidebarItem}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -77,6 +172,11 @@ export default function Projects() {
           {itemsProyectos}
         </nav>
 
+        {/* Selector del modelo de IA que respondera en el panel */}
+        <div className={styles.sidebarModelo}>
+          <SelectorModelo modeloActual={usuario && usuario.modeloIA} onCambiar={cambiarModelo} />
+        </div>
+        
         <Link to="/ajustes" className={styles.sidebarUser}>
           <img
             src={usuario && usuario.fotoPerfil ? import.meta.env.VITE_API_URL + usuario.fotoPerfil : perfilNoDefinido}
@@ -91,10 +191,44 @@ export default function Projects() {
       </aside>
 
       <main className={styles.content}>
-        
+
         {/*<Outlet /> es un componente de React Router que actúa como un hueco — un espacio reservado donde se renderiza la ruta hija activa. Cuando la url coincide con una ruta hija definida en APP.jsx, carga la pagina definida en esa ruta hija, que en este caso es ProjectPanel */}
         <Outlet />
       </main>
+
+      {/* Panel de IA: solo se muestra si esta abierto y hay un proyecto seleccionado.
+          Le pasamos la conversacion encontrada (o null) y la funcion para crearla al primer mensaje. */}
+      {panelAbierto && id && (
+        <aside className={styles.panelIA}>
+          <div className={styles.panelIAHeader}>
+            <span className={styles.panelIATitulo}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5Z"/>
+              </svg>
+              Asistente IA - {nombreIA}
+            </span>
+            <button type="button" className={styles.panelIACerrar} onClick={function () { setPanelAbierto(false); }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* key={id} es una prop especial de React: cuando cambia, React DESTRUYE este componente
+              y monta uno nuevo desde cero (con su estado reiniciado). Como id es el id del proyecto,
+              al cambiar de proyecto el panel se reinicia limpio en vez de arrastrar los mensajes del
+              proyecto anterior. Es la forma recomendada de "resetear" un componente al cambiar una prop,
+              sin tener que limpiar mensajes/idActual a mano con un useEffect. */}
+          <PanelConversacionIA
+            key={id}
+            conversacionId={conversacionIaId}
+            crearConversacion={crearConversacionProyecto}
+            onConversacionCreada={setConversacionIaId}
+            placeholder='Pregunta sobre el proyecto...'
+          />
+        </aside>
+      )}
     </div>
   );
 }
