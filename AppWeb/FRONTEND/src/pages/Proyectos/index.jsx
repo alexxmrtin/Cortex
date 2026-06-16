@@ -9,7 +9,7 @@ import SelectorModelo from '../../components/SelectorModelo';
 
 // Titulo centinela con el que identificamos LA conversacion del panel de IA de cada proyecto.
 // Combinado con el proyecto_id, nos permite reutilizar siempre la misma conversacion por proyecto.
-const TITULO_PANEL_IA = 'Asistente del proyecto';
+export const TITULO_PANEL_IA = 'Asistente del proyecto';
 
 
 export default function Projects() {

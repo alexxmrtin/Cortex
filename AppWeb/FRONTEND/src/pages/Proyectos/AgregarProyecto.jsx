@@ -239,7 +239,7 @@ export default function AgregarProyecto() {
             />
           </div>
 
-          {/*Bloque de codigo perteneciente a la subida de archivos */}
+          {/*---------------------------------------------------------------------------------------- */}
           <div className={styles.field}>
             <label className={styles.label}>Archivos</label>
 
@@ -276,8 +276,7 @@ export default function AgregarProyecto() {
               </div>
             )}
           </div>
-          {/*Fin del bloque perteneciente a la subida de archivos */}
-
+          {/*----------------------------------------------------------------------------------------------- */}
           {error && <p className={styles.error}>{error}</p>}
 
           <button type="submit" className={styles.button} disabled={cargando}>

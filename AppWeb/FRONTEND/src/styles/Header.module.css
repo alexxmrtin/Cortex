@@ -1,10 +1,10 @@
 .header {
-  color: white;
+  color: var(--c-text);
   padding: 1rem 0;
 }
 
 .headerBorder {
-  border-bottom: 2px solid #c0bfc2;
+  border-bottom: 2px solid var(--c-border);
 }
 
 .container {
@@ -24,7 +24,7 @@
   margin: 0 auto;
   font-size: 1.2rem;
   font-weight: 500;
-  color: rgb(0, 0, 0);
+  color: var(--c-text);
   transition: opacity 0.3s ease;
 }
 
@@ -37,7 +37,7 @@
 }
 
 .nav a {
-  color: rgb(0, 0, 0);
+  color: var(--c-text);
   text-decoration: none;
   transition: opacity 0.3s ease;
   padding: 0.5rem;
@@ -51,11 +51,35 @@
   cursor: pointer;
   transition: transform 0.3s ease;
   margin-top: 0.4rem;
-  
+
 }
 
 .nav a:hover {
-  background: #f4f4f4;
-  color: #555;
+  background: var(--c-hover);
+  color: var(--c-text-2);
   border-radius: 0.5rem;
 }
+
+/* Lamparita para cambiar el tema */
+.temaBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-text);
+  padding: 0.45rem;
+  border-radius: 0.5rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.temaBtn:hover {
+  background: var(--c-hover);
+}
+
+/* Cuando el tema oscuro esta activo, la lamparita se ilumina */
+.temaBtnActivo {
+  color: #f59e0b;
+}
+

@@ -249,4 +249,37 @@ Base: `http://localhost:8000`
 | **Conversacion** | `id`, `titulo`, `fechaCreacion`, `usuario_id`, `proyecto_id`, `archivos_contexto` (CSV de IDs de archivos usados como contexto) |
 | **Mensaje** | `id`, `contenido`, `rol` (`usuario`/`ia`), `fecha`, `conversacion_id` |
 
+---
+
+## 🌓 Tema claro / oscuro
+
+El tema se implementa con **variables CSS (custom properties)**. Los CSS Modules no usan colores literales sino tokens (`var(--c-*)`), cuyos valores se redefinen según el tema activo. Alternar de tema no recarga estilos: únicamente cambia un atributo en la raíz del documento.
+
+**Definición de tokens — `src/index.css`.** Los valores del tema claro se declaran en `:root` y los del oscuro en `[data-theme="dark"]`, que por especificidad sobreescribe a los primeros cuando el atributo está presente en `<html>`:
+
+```css
+:root               { --c-surface: #ffffff; --c-text: #333333; --c-border: #c0bfc2; /* ... */ }
+[data-theme="dark"] { --c-surface: #20222a; --c-text: #e7e7ea; --c-border: #353842; /* ... */ }
+```
+
+Los módulos de estilo consumen estos tokens (`color: var(--c-text)`, `background: var(--c-surface)`…). Los colores de estado (error/peligro) y los botones con texto blanco se mantienen literales para preservar el contraste en ambos temas.
+
+**Selección — `Ajustes` › Apariencia.** La preferencia se aplica, se persiste y se sincroniza con el backend:
+
+```js
+document.documentElement.setAttribute('data-theme', 'dark'); // aplica (removeAttribute para claro)
+localStorage.setItem('tema', 'oscuro');                      // persistencia en el navegador
+await apiClient.patch('/usuarios/me', { tema: 'oscuro' });   // preferencia del usuario
+```
+
+**Inicialización — `src/main.jsx`.** El tema almacenado se reaplica antes del primer render, de forma global a toda la aplicación, evitando el *flash* de tema incorrecto:
+
+```js
+if (localStorage.getItem('tema') === 'oscuro') {
+  document.documentElement.setAttribute('data-theme', 'dark')
+}
+```
+
+`localStorage` actúa como fuente de verdad para aplicar el tema en cliente; el campo `tema` del usuario conserva la preferencia en servidor.
+
 

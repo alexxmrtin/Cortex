@@ -102,7 +102,7 @@ export default function Home() {
   const [servicios, setServicios] = useState(null);
   const [proyectos, setProyectos] = useState(null);
 
-  
+
 
   //Usamos useEffect para que cada vez que renderize esta funcion en el dom y se dispara mirando si existe un token
   useEffect(function() {
@@ -191,7 +191,7 @@ export default function Home() {
       <div>
         <main className={styles.main}>
           <section className={styles.hero}>
-            <h1>Bienvenido, {usuario ? usuario.nombreUsuario.split(' ')[0] : ''}</h1> 
+            <h1>Bienvenido, {usuario ? usuario.nombreUsuario.split(' ')[0] : ''}</h1>
             <button onClick={cerrarSesion} className={styles.loginBtn}>Cerrar Sesión</button>
           </section>
           

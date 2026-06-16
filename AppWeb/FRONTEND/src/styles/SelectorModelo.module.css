@@ -11,8 +11,8 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  background: #f4f4f4;
-  border: 1.5px solid #e8e8e8;
+  background: var(--c-hover);
+  border: 1.5px solid var(--c-border);
   border-radius: 10px;
   padding: 0.5rem 0.75rem;
   width: 100%;
@@ -21,14 +21,14 @@
 }
 
 .badge:hover {
-  background: #ebebeb;
+  background: var(--c-divider);
 }
 
 .dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #d1d5db;
+  background: var(--c-muted);
   flex-shrink: 0;
   transition: background 0.3s;
 }
@@ -54,7 +54,7 @@
 
 .label {
   font-size: 0.65rem;
-  color: #aaa;
+  color: var(--c-muted);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -63,7 +63,7 @@
 
 .nombre {
   font-size: 0.82rem;
-  color: #555;
+  color: var(--c-text-2);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -76,8 +76,8 @@
   bottom: calc(100% + 0.5rem);
   left: 0;
   right: 0;
-  background: #fff;
-  border: 1.5px solid #e8e8e8;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
   border-radius: 12px;
   padding: 0.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -86,7 +86,7 @@
 
 .panelTitulo {
   font-size: 0.65rem;
-  color: #aaa;
+  color: var(--c-muted);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -109,7 +109,7 @@
 }
 
 .modeloItem:hover {
-  background: #f4f4f4;
+  background: var(--c-hover);
 }
 
 .modeloItem:disabled {
@@ -118,21 +118,21 @@
 }
 
 .modeloItemActivo {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  background: var(--c-hover);
+  border-color: var(--c-accent);
 }
 
 .modeloItemActivo:hover {
-  background: #dcfce7;
+  background: var(--c-divider);
 }
 
 .modeloNombre {
   font-size: 0.82rem;
-  color: #333;
+  color: var(--c-text);
   font-weight: 500;
 }
 
 .modeloProveedor {
   font-size: 0.68rem;
-  color: #aaa;
+  color: var(--c-muted);
 }

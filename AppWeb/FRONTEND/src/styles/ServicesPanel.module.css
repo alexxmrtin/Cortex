@@ -1,8 +1,8 @@
 .panel {
   padding: 2rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   display: flex;
   flex-direction: column;
@@ -10,7 +10,7 @@
 }
 
 .noEncontrado {
-  color: #aaa;
+  color: var(--c-muted);
   padding: 1.5rem;
 }
 
@@ -20,19 +20,19 @@
   align-items: flex-start;
   justify-content: space-between;
   padding-bottom: 1.2rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--c-divider);
 }
 
 .titulo {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0 0 0.2rem;
 }
 
 .subtitulo {
   font-size: 0.8rem;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 /* ── Grid de información ── */
@@ -53,28 +53,28 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 .infoLink {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #555;
+  color: var(--c-text-2);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .infoLink:hover {
-  color: #222;
+  color: var(--c-text);
 }
 
 .infoValor {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #333;
+  color: var(--c-text);
 }
 
-/* ── Estado ── */
+/* ── Estado (colores de estado: se mantienen literales en ambos temas) ── */
 .estadoActivo {
   display: flex;
   align-items: center;
@@ -147,14 +147,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 /* Descripción en modo solo lectura (la edicion se hace en ActualizarServicio) */
 .descripcionValor {
   margin: 0;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--c-text);
   line-height: 1.5;
   white-space: pre-wrap;       /* respeta saltos de linea y espacios */
   overflow-wrap: break-word;   /* parte palabras/URLs muy largas para que no se salgan */

@@ -7,16 +7,16 @@
 .titulo {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--c-divider);
 }
 
 .explorador {
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   overflow: hidden;
 }
@@ -28,9 +28,9 @@
   padding: 0.75rem 1rem;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #555;
-  background: #f8f8f8;
-  border-bottom: 2px solid #f0f0f0;
+  color: var(--c-text-2);
+  background: var(--c-hover);
+  border-bottom: 2px solid var(--c-divider);
 }
 
 .exploradorCuerpo {
@@ -49,7 +49,7 @@
 }
 
 .fila:hover {
-  background: #f4f4f4;
+  background: var(--c-hover);
 }
 
 .filaIcono {
@@ -60,7 +60,7 @@
 
 .filaNombre {
   font-size: 0.9rem;
-  color: #333;
+  color: var(--c-text);
 }
 
 .descripcionBloque {
@@ -72,22 +72,22 @@
 .descripcionLabel {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #555;
+  color: var(--c-text-2);
 }
 
 /* Descripción en modo solo lectura (la edicion se hace en ActualizarProyecto).
-   Mantiene el aspecto de panel que tenia el textarea: fondo blanco, borde gris y esquinas redondeadas. */
+   Mantiene el aspecto de panel que tenia el textarea: fondo, borde y esquinas redondeadas. */
 .descripcionValor {
   margin: 0;
   min-height: 120px;
   max-height: 200px;           /* la caja no crece mas de esto */
   overflow-y: auto;            /* si el texto no cabe, scroll dentro de la caja */
   padding: 0.75rem 1rem;
-  background: white;
-  border: 2px solid #c0bfc2;
+  background: var(--c-surface);
+  border: 2px solid var(--c-border);
   border-radius: 12px;
   font-size: 0.95rem;
-  color: #333;
+  color: var(--c-text);
   line-height: 1.5;
   white-space: pre-wrap;       /* respeta saltos de linea y espacios */
   overflow-wrap: break-word;   /* parte palabras/URLs muy largas para que no se salgan */
@@ -95,7 +95,7 @@
 }
 
 .noEncontrado {
-  color: #aaa;
+  color: var(--c-muted);
   font-size: 1rem;
   padding: 2rem;
 }

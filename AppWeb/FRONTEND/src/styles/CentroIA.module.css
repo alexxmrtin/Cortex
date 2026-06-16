@@ -9,13 +9,15 @@
 
 /* ── Sidebar (idéntico a Projects) ── */
 .sidebar {
-  flex: 0.7;
+  flex: 0 0 500px; /* ancho fijo: no crece ni encoge */
+  min-width: 0;    /* anula el min-width:auto por defecto del flex item; sin esto un titulo largo expande el sidebar igual */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 1.2rem 1rem;
   min-height: 500px;
@@ -27,7 +29,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #aaa;
+  color: var(--c-muted);
   padding: 0.8rem 0.6rem 0.2rem;
   margin: 0;
 }
@@ -40,8 +42,8 @@
 }
 
 .sidebarItemActive {
-  background: #eef0ef;
-  color: #333;
+  background: var(--c-hover);
+  color: var(--c-text);
   font-weight: 600;
 }
 
@@ -51,7 +53,7 @@
   gap: 0.7rem;
   padding: 0.55rem 0.8rem;
   border-radius: 10px;
-  color: #555;
+  color: var(--c-text-2);
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 500;
@@ -64,8 +66,8 @@
 }
 
 .sidebarItem:hover {
-  background: #f4f4f4;
-  color: #222;
+  background: var(--c-hover);
+  color: var(--c-text);
 }
 
 .sidebarItem:hover .sidebarItemBorrar {
@@ -77,7 +79,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #aaa;
+  color: var(--c-muted);
   padding: 2px;
   border-radius: 4px;
   display: flex;
@@ -122,14 +124,14 @@
 
 .sidebarItemFecha {
   font-size: 0.72rem;
-  color: #bbb;
+  color: var(--c-muted);
   font-weight: 400;
   flex-shrink: 0;
 }
 
 .sidebarItemProyecto {
   font-size: 0.72rem;
-  color: #aaa;
+  color: var(--c-muted);
   font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
@@ -145,8 +147,8 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  background: #f4f4f4;
-  border: 1.5px solid #e8e8e8;
+  background: var(--c-hover);
+  border: 1.5px solid var(--c-border);
   border-radius: 10px;
   padding: 0.5rem 0.75rem;
 }
@@ -168,7 +170,7 @@
 
 .sidebarModelLabel {
   font-size: 0.65rem;
-  color: #aaa;
+  color: var(--c-muted);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -176,7 +178,7 @@
 
 .sidebarModelNombre {
   font-size: 0.82rem;
-  color: #555;
+  color: var(--c-text-2);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -188,14 +190,14 @@
   align-items: center;
   gap: 0.8rem;
   padding: 0.8rem 0.6rem 0.2rem;
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid var(--c-divider);
   text-decoration: none;
   border-radius: 10px;
   transition: background 0.15s;
 }
 
 .sidebarUser:hover {
-  background: #f4f4f4;
+  background: var(--c-hover);
 }
 
 .sidebarAvatar {
@@ -214,12 +216,12 @@
 .sidebarUserName {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #333;
+  color: var(--c-text);
 }
 
 .sidebarUserRole {
   font-size: 0.75rem;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 /* ── Contenido principal ── */
@@ -228,9 +230,9 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   overflow: hidden;
 }
@@ -251,30 +253,30 @@
   justify-content: center;
   gap: 1rem;
   padding: 2rem;
-  color: #888;
+  color: var(--c-muted);
 }
 
 .emptyIcon {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #f5f5f5;
+  background: var(--c-hover);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 .emptyTitle {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
 }
 
 .emptySubtitle {
   font-size: 0.95rem;
-  color: #aaa;
+  color: var(--c-muted);
   margin: 0;
 }
 
@@ -291,16 +293,16 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 .selectorProyectoSelect {
   padding: 0.45rem 0.8rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--c-border);
   border-radius: 10px;
   font-size: 0.88rem;
-  color: #555;
-  background: white;
+  color: var(--c-text-2);
+  background: var(--c-surface);
   cursor: pointer;
   outline: none;
   transition: border-color 0.15s;
@@ -308,7 +310,7 @@
 }
 
 .selectorProyectoSelect:focus {
-  border-color: #c0bfc2;
+  border-color: var(--c-accent);
 }
 
 .selectorProyectoSelect:disabled {
@@ -325,20 +327,20 @@
 }
 
 .sugerencia {
-  background: #f4f4f4;
-  border: 1px solid #e0e0e0;
+  background: var(--c-hover);
+  border: 1px solid var(--c-border);
   border-radius: 20px;
   padding: 0.5rem 1rem;
   font-size: 0.85rem;
-  color: #555;
+  color: var(--c-text-2);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 
 .sugerencia:hover {
-  background: #eef0ef;
-  border-color: #c0bfc2;
-  color: #333;
+  background: var(--c-divider);
+  border-color: var(--c-accent);
+  color: var(--c-text);
 }
 
 /* ── Chat ── */
@@ -374,12 +376,12 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #eef0ef;
+  background: var(--c-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #555;
+  color: var(--c-text-2);
 }
 
 .mensajeBurbuja {
@@ -390,6 +392,7 @@
   line-height: 1.5;
 }
 
+/* Burbuja del usuario: oscura con texto blanco (se mantiene literal en ambos temas) */
 .mensajeUsuario .mensajeBurbuja {
   background: #333;
   color: white;
@@ -397,8 +400,8 @@
 }
 
 .mensajeIA .mensajeBurbuja {
-  background: #f4f4f4;
-  color: #333;
+  background: var(--c-hover);
+  color: var(--c-text);
   border-bottom-left-radius: 4px;
 }
 
@@ -441,7 +444,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #aaa;
+  background: var(--c-muted);
   animation: pulso 1.2s infinite ease-in-out;
 }
 
@@ -468,28 +471,30 @@
   align-items: center;
   gap: 0.6rem;
   padding: 1rem 1.2rem;
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid var(--c-divider);
 }
 
 .input {
   flex: 1;
   padding: 0.7rem 1rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--c-border);
   border-radius: 12px;
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.15s;
-  color: #333;
+  color: var(--c-text);
+  background: var(--c-surface);
 }
 
 .input:focus {
-  border-color: #c0bfc2;
+  border-color: var(--c-accent);
 }
 
 .input::placeholder {
-  color: #bbb;
+  color: var(--c-muted);
 }
 
+/* Botón de enviar: oscuro con icono blanco (se mantiene literal en ambos temas) */
 .enviarBtn {
   width: 40px;
   height: 40px;

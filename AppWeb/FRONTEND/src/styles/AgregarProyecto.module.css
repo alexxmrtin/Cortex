@@ -9,9 +9,9 @@
   width: 100%;
   max-width: 480px;
   min-height: 40rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 20px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 2rem 2rem;
   display: flex;
@@ -29,19 +29,19 @@
 
 .logo {
   font-size: 2.5rem;
-  color: #5c6560;
+  color: var(--c-accent);
 }
 
 .title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
 }
 
 .subtitle {
   font-size: 0.9rem;
-  color: #aaa;
+  color: var(--c-muted);
   margin: 0;
 }
 
@@ -60,22 +60,23 @@
 .label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: var(--c-text-2);
 }
 
 .input {
   padding: 0.65rem 0.9rem;
   border-radius: 10px;
-  border: 2px solid #c0bfc2;
+  border: 2px solid var(--c-border);
   font-size: 0.95rem;
-  color: #333;
+  color: var(--c-text);
+  background: var(--c-surface);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s;
 }
 
 .input:focus {
-  border-color: #5c6560;
+  border-color: var(--c-accent);
 }
 
 .button {
@@ -98,9 +99,9 @@
 .buttonSecundario {
   padding: 0.75rem;
   border-radius: 10px;
-  border: 2px solid #c0bfc2;
-  background-color: white;
-  color: #555;
+  border: 2px solid var(--c-border);
+  background-color: var(--c-surface);
+  color: var(--c-text-2);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -108,8 +109,8 @@
 }
 
 .buttonSecundario:hover {
-  background-color: #f4f4f4;
-  border-color: #5c6560;
+  background-color: var(--c-hover);
+  border-color: var(--c-accent);
 }
 
 .zonaSubida {
@@ -120,20 +121,20 @@
   gap: 0.6rem;
   padding: 2rem 1rem;
   border-radius: 12px;
-  border: 2px dashed #c0bfc2;
-  background: #fafafa;
+  border: 2px dashed var(--c-border);
+  background: var(--c-hover);
   transition: border-color 0.15s, background 0.15s;
   cursor: default;
 }
 
 .zonaSubidaActiva {
-  border-color: #5c6560;
-  background: #f0f2f1;
+  border-color: var(--c-accent);
+  background: var(--c-hover);
 }
 
 .zonaTexto {
   font-size: 0.9rem;
-  color: #aaa;
+  color: var(--c-muted);
   margin: 0;
 }
 
@@ -145,9 +146,9 @@
 .zonaBoton {
   padding: 0.4rem 0.9rem;
   border-radius: 8px;
-  border: 2px solid #c0bfc2;
-  background: white;
-  color: #555;
+  border: 2px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-2);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -155,8 +156,8 @@
 }
 
 .zonaBoton:hover {
-  border-color: #5c6560;
-  background: #f4f4f4;
+  border-color: var(--c-accent);
+  background: var(--c-hover);
 }
 
 .listaArchivos {
@@ -174,12 +175,12 @@
   justify-content: space-between;
   padding: 0.35rem 0.7rem;
   border-radius: 8px;
-  background: #f4f4f4;
+  background: var(--c-hover);
   font-size: 0.85rem;
 }
 
 .archivoNombre {
-  color: #333;
+  color: var(--c-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -188,7 +189,7 @@
 .archivoEliminar {
   background: none;
   border: none;
-  color: #aaa;
+  color: var(--c-muted);
   cursor: pointer;
   font-size: 0.8rem;
   flex-shrink: 0;

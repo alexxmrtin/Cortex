@@ -3,9 +3,9 @@
 
 .panel {
   padding: 2rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   display: flex;
   flex-direction: column;
@@ -15,10 +15,10 @@
 .titulo {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
   padding-bottom: 1.2rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--c-divider);
 }
 
 /* ── Rejilla de campos ── */
@@ -39,19 +39,19 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 .input,
 .select {
   width: 100%;
   padding: 0.5rem 0.7rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--c-border);
   border-radius: 10px;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--c-text);
   outline: none;
-  background: white;
+  background: var(--c-surface);
   font-family: inherit;
   box-sizing: border-box;
   transition: border-color 0.15s;
@@ -59,11 +59,11 @@
 
 .input:focus,
 .select:focus {
-  border-color: #c0bfc2;
+  border-color: var(--c-accent);
 }
 
 .input::placeholder {
-  color: #bbb;
+  color: var(--c-muted);
 }
 
 /* ── Descripción ── */
@@ -78,17 +78,18 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 .descripcionTexto {
   width: 100%;
   min-height: 100px;
   padding: 0.7rem 0.9rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--c-border);
   border-radius: 12px;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--c-text);
+  background: var(--c-surface);
   resize: vertical;
   outline: none;
   font-family: inherit;
@@ -97,14 +98,14 @@
 }
 
 .descripcionTexto:focus {
-  border-color: #c0bfc2;
+  border-color: var(--c-accent);
 }
 
 .descripcionTexto::placeholder {
-  color: #bbb;
+  color: var(--c-muted);
 }
 
-/* ── Mensaje de error ── */
+/* ── Mensaje de error (colores de estado: literales) ── */
 .error {
   padding: 0.6rem 0.9rem;
   background: #fdecec;
@@ -114,7 +115,7 @@
   font-size: 0.85rem;
 }
 
-/* ── Botón de guardar ── */
+/* ── Botón de guardar (oscuro con texto blanco: literal en ambos temas) ── */
 .submit {
   align-self: flex-start;
   padding: 0.6rem 1.4rem;

@@ -9,9 +9,9 @@
   width: 100%;
   max-width: 420px;
   margin: 2rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 20px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 2.5rem 2rem;
   display: flex;
@@ -28,20 +28,20 @@
 
 .logo {
   font-size: 2.5rem;
-  color: #5c6560;
+  color: var(--c-accent);
   margin-bottom: 1rem;
 }
 
 .title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
 }
 
 .subtitle {
   font-size: 0.9rem;
-  color: #aaa;
+  color: var(--c-muted);
   margin: 0;
 }
 
@@ -60,21 +60,22 @@
 .label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: var(--c-text-2);
 }
 
 .input {
   padding: 0.65rem 0.9rem;
   border-radius: 10px;
-  border: 2px solid #c0bfc2;
+  border: 2px solid var(--c-border);
   font-size: 0.95rem;
-  color: #333;
+  color: var(--c-text);
+  background: var(--c-surface);
   outline: none;
   transition: border-color 0.15s;
 }
 
 .input:focus {
-  border-color: #5c6560;
+  border-color: var(--c-accent);
 }
 
 .button {
@@ -97,12 +98,12 @@
 .footer {
   text-align: center;
   font-size: 0.85rem;
-  color: #aaa;
+  color: var(--c-muted);
   margin: 0;
 }
 
 .link {
-  color: #5c6560;
+  color: var(--c-accent);
   font-weight: 600;
   text-decoration: none;
 }

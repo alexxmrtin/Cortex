@@ -2,9 +2,9 @@
 
 .panel {
   padding: 2rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   display: flex;
   flex-direction: column;
@@ -14,10 +14,10 @@
 .titulo {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
   padding-bottom: 1.2rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--c-divider);
 }
 
 /* ── Cada seccion del panel ── */
@@ -26,7 +26,7 @@
   flex-direction: column;
   gap: 0.7rem;
   padding-bottom: 1.5rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--c-divider);
 }
 
 .seccion:last-of-type {
@@ -37,14 +37,14 @@
 .seccionTitulo {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
 }
 
 /* Texto tenue para la seccion aun sin contenido */
 .placeholder {
   font-size: 0.85rem;
-  color: #bbb;
+  color: var(--c-muted);
   margin: 0;
 }
 
@@ -52,10 +52,11 @@
   flex: 1;
   min-width: 0;
   padding: 0.55rem 0.8rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--c-border);
   border-radius: 10px;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--c-text);
+  background: var(--c-surface);
   outline: none;
   font-family: inherit;
   box-sizing: border-box;
@@ -63,17 +64,18 @@
 }
 
 .input:focus {
-  border-color: #c0bfc2;
+  border-color: var(--c-accent);
 }
 
 .textarea {
   width: 100%;
   min-height: 110px;
   padding: 0.7rem 0.9rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--c-border);
   border-radius: 12px;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--c-text);
+  background: var(--c-surface);
   resize: vertical;
   outline: none;
   font-family: inherit;
@@ -82,15 +84,15 @@
 }
 
 .textarea:focus {
-  border-color: #c0bfc2;
+  border-color: var(--c-accent);
 }
 
 .input::placeholder,
 .textarea::placeholder {
-  color: #bbb;
+  color: var(--c-muted);
 }
 
-/* ── Boton de guardar de cada seccion ── */
+/* ── Boton de guardar (oscuro con texto blanco: literal en ambos temas) ── */
 .guardar {
   align-self: flex-start;
   flex-shrink: 0;
@@ -110,7 +112,7 @@
   background: #555;
 }
 
-/* ── Mensaje de error ── */
+/* ── Mensaje de error (colores de estado: literales) ── */
 .error {
   padding: 0.6rem 0.9rem;
   background: #fdecec;

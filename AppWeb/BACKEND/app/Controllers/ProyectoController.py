@@ -1,3 +1,5 @@
+import os
+import shutil
 from fastapi import APIRouter, HTTPException, Header
 from app.Core.database import SessionLocal
 from app.Models.Proyecto import Proyecto
@@ -6,6 +8,10 @@ from app.Core.security import get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
 
 router = APIRouter()
+
+# Carpeta raiz donde se guardan los archivos en disco: Storage/ArchivosUsuarios/{usuario_id}/{proyecto_id}/
+# (mismo valor que en ArchivoProyectoController.py)
+STORAGE_BASE = "Storage/ArchivosUsuarios"
 
 # GET    /proyectos/            → Lista todos los proyectos del usuario
 # POST   /proyectos/            → Crea un nuevo proyecto
@@ -113,6 +119,11 @@ def eliminar_proyecto(proyecto_id: int, authorization: str = Header(...)):
     if not proyecto:
         db.close()
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+
+    # El cascade="all, delete-orphan" del modelo solo borra las filas de ArchivosProyecto en la BD, no los ficheros en disco. Por eso borramos a mano la carpeta del proyecto en Storage para no dejar archivos huerfanos.
+    carpeta_proyecto = os.path.join(STORAGE_BASE, str(usuario.id), str(proyecto_id))
+    if os.path.exists(carpeta_proyecto):
+        shutil.rmtree(carpeta_proyecto)
 
     db.delete(proyecto)
     db.commit()

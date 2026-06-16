@@ -105,3 +105,34 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+
+/* ──────────────────────────────────────────────────────────────
+   Tokens de tema de la app (colores). Por defecto = tema CLARO.
+   Cuando <html> tiene data-theme="dark" se aplican los valores oscuros.
+   ────────────────────────────────────────────────────────────── */
+:root {
+  --c-bg-1: #e8e8eb;     /* fondo de pagina (degradado) */
+  --c-bg-2: #d4d4d9;
+  --c-surface: #ffffff;  /* tarjetas / paneles */
+  --c-text: #333333;     /* texto principal */
+  --c-text-2: #555555;   /* texto secundario */
+  --c-muted: #aaaaaa;    /* texto tenue / labels */
+  --c-border: #c0bfc2;   /* bordes de tarjetas */
+  --c-divider: #f0f0f0;  /* lineas separadoras */
+  --c-hover: #f4f4f4;    /* fondo al pasar el raton */
+  --c-accent: #5c6560;   /* gris verdoso de acento (logo, etc.) */
+}
+
+[data-theme="dark"] {
+  --c-bg-1: #16171d;
+  --c-bg-2: #0f1014;
+  --c-surface: #20222a;
+  --c-text: #e7e7ea;
+  --c-text-2: #b4b6bd;
+  --c-muted: #7c7f88;
+  --c-border: #353842;
+  --c-divider: #2c2f37;
+  --c-hover: #2a2d35;
+  --c-accent: #9aa39d;
+}

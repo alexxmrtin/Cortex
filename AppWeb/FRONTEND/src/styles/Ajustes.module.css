@@ -14,9 +14,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 1.2rem 0.8rem;
 }
@@ -26,10 +26,10 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #aaa;
+  color: var(--c-muted);
   padding: 0 0.4rem 0.6rem;
   margin: 0 0 0.4rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--c-divider);
 }
 
 .navItem {
@@ -40,25 +40,25 @@
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #555;
+  color: var(--c-text-2);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
 .navItem:hover {
-  background: #f4f4f4;
-  color: #222;
+  background: var(--c-hover);
+  color: var(--c-text);
 }
 
 .navItemActivo {
-  background: #f4f4f4;
+  background: var(--c-hover);
   border: none;
   text-align: left;
   padding: 0.55rem 0.8rem;
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #5c6560;
+  color: var(--c-accent);
   cursor: pointer;
 }
 
@@ -77,22 +77,22 @@
 .seccionTitulo {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
 }
 
 .seccionDesc {
   font-size: 0.9rem;
-  color: #aaa;
+  color: var(--c-muted);
   margin: 0;
   margin-top: -0.6rem;
 }
 
 /* ── Cards internas ── */
 .card {
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 1.5rem;
   display: flex;
@@ -101,7 +101,7 @@
 }
 
 .cardPeligro {
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
   border: 5px solid #f5c0c0;
   box-shadow: 0 2px 8px rgba(200, 80, 80, 0.07);
@@ -114,7 +114,7 @@
 .cardTitulo {
   font-size: 1rem;
   font-weight: 700;
-  color: #333;
+  color: var(--c-text);
   margin: 0;
 }
 
@@ -127,7 +127,7 @@
 
 .cardDesc {
   font-size: 0.88rem;
-  color: #888;
+  color: var(--c-muted);
   margin: 0;
   line-height: 1.5;
 }
@@ -137,9 +137,9 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  background: white;
+  background: var(--c-surface);
   border-radius: 16px;
-  border: 5px solid #c0bfc2;
+  border: 5px solid var(--c-border);
   box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
   padding: 1.2rem 1.5rem;
 }
@@ -150,7 +150,7 @@
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 3px solid #c0bfc2;
+  border: 3px solid var(--c-border);
 }
 
 .avatarInfo {
@@ -161,7 +161,7 @@
 
 .avatarHint {
   font-size: 0.78rem;
-  color: #aaa;
+  color: var(--c-muted);
 }
 
 /* ── Campos ── */
@@ -174,28 +174,28 @@
 .label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: var(--c-text-2);
 }
 
 .input {
   padding: 0.65rem 0.9rem;
   border-radius: 10px;
-  border: 2px solid #c0bfc2;
+  border: 2px solid var(--c-border);
   font-size: 0.95rem;
-  color: #333;
+  color: var(--c-text);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s;
-  background: white;
+  background: var(--c-surface);
 }
 
 .input:focus {
-  border-color: #5c6560;
+  border-color: var(--c-accent);
 }
 
 .input[readonly] {
-  background: #f9f9f9;
-  color: #aaa;
+  background: var(--c-hover);
+  color: var(--c-muted);
   cursor: default;
 }
 
@@ -221,9 +221,9 @@
 .botonSecundario {
   padding: 0.7rem 1.2rem;
   border-radius: 10px;
-  border: 2px solid #c0bfc2;
-  background: white;
-  color: #555;
+  border: 2px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-2);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -233,8 +233,8 @@
 }
 
 .botonSecundario:hover {
-  background: #f4f4f4;
-  border-color: #5c6560;
+  background: var(--c-hover);
+  border-color: var(--c-accent);
 }
 
 .botonPeligro {
@@ -267,9 +267,9 @@
   gap: 0.5rem;
   padding: 0.7rem 1.2rem;
   border-radius: 10px;
-  border: 2px solid #c0bfc2;
-  background: white;
-  color: #555;
+  border: 2px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-2);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -278,8 +278,8 @@
 }
 
 .temaBoton:hover {
-  border-color: #5c6560;
-  background: #f4f4f4;
+  border-color: var(--c-accent);
+  background: var(--c-hover);
 }
 
 .temaBotonActivo {
@@ -288,9 +288,9 @@
   gap: 0.5rem;
   padding: 0.7rem 1.2rem;
   border-radius: 10px;
-  border: 2px solid #5c6560;
-  background: #f0f2f1;
-  color: #5c6560;
+  border: 2px solid var(--c-accent);
+  background: var(--c-hover);
+  color: var(--c-accent);
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
@@ -325,6 +325,6 @@
 
 .separador {
   border: none;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--c-divider);
   margin: 0.8rem 0;
 }

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../../styles/ActualizarProyecto.module.css';
 import subidaStyles from '../../styles/AgregarProyecto.module.css';
 import apiClient from '../../services/api';
+import { TITULO_PANEL_IA } from './index';
 
 
 // Panel para actualizar un proyecto. Tiene tres secciones:
@@ -54,17 +55,29 @@ export default function ActualizarProyecto() {
         descripcion: descripcion
       });
 
-      // 2. Solo tocamos los archivos si el usuario ha seleccionado alguno.
+      // 2. La conversacion del panel de IA de este proyecto se titula "Asistente del proyecto {nombre}".
+      //     Si hemos cambiado el nombre, hay que regenerar ese titulo para que en CentroIA no se vea el nombre antiguo.
+      const respuestaConversaciones = await apiClient.get('/conversaciones/');
+      for (let i = 0; i < respuestaConversaciones.data.length; i++) {
+        const conv = respuestaConversaciones.data[i];
+        if (conv.proyecto_id === Number(id) && conv.titulo.startsWith(TITULO_PANEL_IA)) {
+          await apiClient.patch('/conversaciones/' + conv.id, {
+            titulo: TITULO_PANEL_IA + ' ' + nombre
+          });
+        }
+      }
+
+      // 3. Solo tocamos los archivos si el usuario ha seleccionado alguno.
       //    Asi, editar solo el nombre/descripcion no borra los ficheros del proyecto.
       if (archivos.length > 0) {
 
-        // 2a. Obtenemos todos los archivos actuales del proyecto y los borramos uno a uno
+        // 3a. Obtenemos todos los archivos actuales del proyecto y los borramos uno a uno
         const respuestaArchivos = await apiClient.get('/archivos/proyecto/' + id);
         for (let i = 0; i < respuestaArchivos.data.length; i++) {
           await apiClient.delete('/archivos/' + respuestaArchivos.data[i].id);
         }
 
-        // 2b. Subimos los archivos que ha metido el usuario (igual que en AgregarProyecto)
+        // 3b. Subimos los archivos que ha metido el usuario (igual que en AgregarProyecto)
         for (let i = 0; i < archivos.length; i++) {
           const formData = new FormData(); // multipart/form-data para poder enviar el binario
           formData.append('archivo', archivos[i].archivo);

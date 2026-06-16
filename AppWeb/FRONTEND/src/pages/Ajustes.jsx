@@ -181,20 +181,44 @@ function SeccionSeguridad() {
 
 
 //SECCION APARIENCIA
-function SeccionApariencia({usuario}) {
-  const [tema, setTema] = useState('claro');
+function SeccionApariencia() {
+  // El tema activo se lee de localStorage (la fuente de verdad para aplicarlo en toda la app)
+  const [tema, setTema] = useState(function () {
+    if (localStorage.getItem('tema') === 'oscuro') {
+      return 'oscuro';
+    }
+    return 'claro';
+  });
 
   async function handleTema(nuevoTema){
-    try {
-      if (nuevoTema === 'claro') {
-        await apiClient.patch('/usuarios/me', { tema: 'claro' });
-      } else {
-        await apiClient.patch('/usuarios/me', { tema: 'oscuro' });
-      }
-      setTema(nuevoTema);
-    } catch (err) {
-      console.error('Error al cambiar el tema', err);
+    setTema(nuevoTema);
+
+    // 1. Aplicamos el tema al instante poniendo/quitando data-theme="dark" en <html>
+    if (nuevoTema === 'oscuro') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
     }
+
+    // 2. Lo guardamos en localStorage para que persista y se aplique al recargar (lo lee main.jsx)
+    localStorage.setItem('tema', nuevoTema);
+
+    // 3. Lo guardamos tambien en el backend como preferencia del usuario
+    try {
+      await apiClient.patch('/usuarios/me', { tema: nuevoTema });
+    } catch (err) {
+      console.error('Error al guardar el tema', err);
+    }
+  }
+
+  // Clase de cada boton segun el tema activo (sin ternario)
+  let claseClaro = styles.temaBoton;
+  if (tema === 'claro') {
+    claseClaro = styles.temaBotonActivo;
+  }
+  let claseOscuro = styles.temaBoton;
+  if (tema === 'oscuro') {
+    claseOscuro = styles.temaBotonActivo;
   }
 
 
@@ -207,7 +231,7 @@ function SeccionApariencia({usuario}) {
         <h3 className={styles.cardTitulo}>Tema</h3>
         <div className={styles.temaOpciones}>
           <button
-            className={tema === 'claro' ? styles.temaBotonActivo : styles.temaBoton}
+            className={claseClaro}
             onClick={function() { handleTema('claro'); }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -219,7 +243,7 @@ function SeccionApariencia({usuario}) {
             Claro
           </button>
           <button
-            className={tema === 'oscuro' ? styles.temaBotonActivo : styles.temaBoton}
+            className={claseOscuro}
             onClick={function() { handleTema('oscuro'); }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -309,7 +333,7 @@ export default function Ajustes() {
   const contenido = {
     'Perfil':     <SeccionPerfil usuario={usuario} />,
     'Seguridad':  <SeccionSeguridad />,
-    'Apariencia': <SeccionApariencia usuario={usuario} />,
+    'Apariencia': <SeccionApariencia />,
     'Cuenta':     <SeccionCuenta usuario={usuario} />,
   };
 
