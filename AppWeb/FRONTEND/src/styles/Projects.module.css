@@ -91,6 +91,51 @@
   opacity: 0.7;
 }
 
+/* ── Fila de proyecto: nombre + iconos de accion al pasar el raton ── */
+.proyectoNombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proyectoAcciones {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  opacity: 0;                 /* ocultos por defecto */
+  transition: opacity 0.15s;
+}
+
+.sidebarItem:hover .proyectoAcciones {
+  opacity: 1;                 /* visibles al pasar el raton por la fila */
+}
+
+.proyectoAccion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 3px;
+  border-radius: 5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.proyectoAccion:hover {
+  background: #e2e2e2;
+  color: #333;
+}
+
+.proyectoAccionBorrar:hover {
+  background: #fdecec;
+  color: #e03e3e;
+}
+
 .sidebarUser {
   display: flex;
   align-items: center;
@@ -133,6 +178,7 @@
 
 .content {
   flex: 3;
+  min-width: 0; /* permite que el contenido se encoja en vez de ensancharse con textos largos sin espacios */
 }
 
 /* ── Panel de IA (columna a la derecha) ── */

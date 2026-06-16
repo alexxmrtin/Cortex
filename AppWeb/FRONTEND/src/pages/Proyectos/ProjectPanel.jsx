@@ -142,7 +142,6 @@ export default function ProjectPanel() {
 
   const [proyecto, setProyecto] = useState(null);
   const [arbol, setArbol] = useState([]);
-  const [descripcion, setDescripcion] = useState('');
   const [cargando, setCargando] = useState(true);
 
 
@@ -155,7 +154,6 @@ export default function ProjectPanel() {
         ]);
 
         setProyecto(respProyecto.data);
-        setDescripcion(respProyecto.data.descripcion || '');
         setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana y obtenemos el arbol
       } catch (err) {
         console.error('Error al cargar el proyecto', err);
@@ -166,11 +164,6 @@ export default function ProjectPanel() {
     cargarDatos();
   }, [id]); // Se vuelve a ejecutar cuando el usuario navega a otro proyecto
 
-
-  //Esta funcion es muy importante, vamos a tener que escribir en la base de datos usando la API para dejar la descripcion puesta
-  function handleDescripcionChange(e) {
-    setDescripcion(e.target.value);
-  }
 
   if (cargando) {
     return <p className={styles.noEncontrado}>Cargando...</p>;
@@ -201,16 +194,12 @@ export default function ProjectPanel() {
         </div>
       </div>
 
-      <div className={styles.descripcionBloque}>
-        <label className={styles.descripcionLabel} htmlFor="descripcion">Descripción</label>
-        <textarea
-          id="descripcion"
-          className={styles.descripcionTexto}
-          placeholder="Escribe una descripción del proyecto..."
-          value={descripcion}
-          onChange={handleDescripcionChange}
-        />
-      </div>
+      {proyecto.descripcion && (
+        <div className={styles.descripcionBloque}>
+          <span className={styles.descripcionLabel}>Descripción</span>
+          <p className={styles.descripcionValor}>{proyecto.descripcion}</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -108,14 +108,13 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
     
     # FLUJO DEL BLOQUE:
     #   1. Traemos todos los archivos del proyecto desde la BD.
-    #   2. Partimos el mensaje del usuario en palabras (en minuscula).
-    #   3. Buscamos archivos cuyo nombre (con o sin extension) coincida exactamente con alguna palabra.
-    #   4. Leemos los IDs que ya se usaron como contexto en mensajes anteriores (guardados en la celda archivos_contexto como CSV en el modelo COnversacion).
-    #   5. Añadimos los nuevos al final, sin duplicar, formando una cola.
-    #   6. La cola tiene un tope de 10: si se pasa, se descartan los mas antiguos (los del principio).
-    #   7. Guardamos la cola actualizada de vuelta en la BD.
-    #   8. Cargamos el contenido de los archivos de la cola (del mas reciente al mas antiguo) hasta un tope de caracteres, y lo metemos en el system_prompt que recibira la IA. El tope evita superar el limite de tokens del modelo.
-    #   Asi la IA recuerda los archivos mencionados a lo largo de toda la conversacion, no solo los del ultimo mensaje.
+    #   2. Partimos el mensaje del usuario en palabras (en minuscula) y buscamos archivos cuyo nombre (con o sin extension) coincida con alguna palabra.
+    #   3. Leemos la cola de IDs usados como contexto en mensajes anteriores (guardada como CSV en archivos_contexto) y le añadimos los nuevos al final, sin duplicar.
+    #   4. La cola tiene un tope de 10: si se pasa, se descartan los mas antiguos (los del principio). Guardamos la cola actualizada en la BD.
+    #   5. Buscamos SIEMPRE el README.txt del proyecto, aparte de la cola, para tenerlo como contexto perpetuo (el tope de 10 nunca lo expulsa).
+    #   6. Ordenamos los archivos por PRIORIDAD para gastar el presupuesto de caracteres: 1º los del mensaje actual, 2º el README, 3º el resto de la cola (del mas reciente al mas antiguo).
+    #   7. Cargamos el contenido en ese orden hasta un tope de caracteres (depende del modelo: mas bajo para Llama/Groq, mas alto para Gemini/Claude) y lo metemos en el system_prompt. Lo que no cabe se recorta o se queda fuera (lo menos prioritario).
+    #   Asi la IA tiene siempre el README, el archivo por el que pregunta el usuario y los mencionados a lo largo de la conversacion.
     
     system_prompt = ""
     if conversacion.proyecto_id:
@@ -202,6 +201,7 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
             MAX_CARACTERES_CONTEXTO = 30000
         else:
             MAX_CARACTERES_CONTEXTO = 60000
+        
         
         caracteres_usados = 0
         bloques = []

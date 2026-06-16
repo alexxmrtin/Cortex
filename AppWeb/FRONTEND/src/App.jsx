@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Projects from './pages/Proyectos/index';
 import ProjectPanel from './pages/Proyectos/ProjectPanel';
 import AgregarProyecto from './pages/Proyectos/AgregarProyecto';
+import ActualizarProyecto from './pages/Proyectos/ActualizarProyecto';
 import CentroIA from './pages/CentroIA/index';
 import EmptyStateIA from './pages/CentroIA/EmptyStateIA';
 import ConversacionIA from './pages/CentroIA/ConversacionIA';
@@ -33,6 +34,7 @@ export default function App() {
           {/*En la ruta hija ":id" es un parametro dinamico, ese valor lo obtenemos del id de el proyecto */}
           <Route path='/proyectos' element={<Projects />}>
             <Route path=':id' element={<ProjectPanel />} />
+            <Route path=':id/actualizar' element={<ActualizarProyecto />} />
             <Route path='agregarProyecto' element={<AgregarProyecto />} />
           </Route>
 

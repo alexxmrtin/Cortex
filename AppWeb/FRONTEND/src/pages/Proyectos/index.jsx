@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, Outlet, useParams } from 'react-router-dom';
+import { Link, Outlet, useParams, useNavigate } from 'react-router-dom';
 import styles from '../../styles/Projects.module.css';
 import perfilNoDefinido from '../../assets/perfilNoDefinido.jpg';
 import apiClient from '../../services/api';
@@ -19,6 +19,7 @@ export default function Projects() {
   const [conversacionIaId, setConversacionIaId] = useState(null); // id de la conversacion del panel para este proyecto (null si aun no existe)
 
   const { id } = useParams(); //useParams lee el :id de la URL actual y la guarda en la variable, lo usamos para construir los links dinamicos de cada proyecto y asignar un estilo diferente al proyecto seleccionado
+  const navigate = useNavigate();
 
 
   
@@ -119,6 +120,39 @@ export default function Projects() {
   }
   //-----------------------------------------------------------------------------------------------------------
 
+  // Navega a la pagina de actualizar el proyecto. stopPropagation evita que el click abra el panel del proyecto.
+  function editarProyecto(e, idProyecto) {
+    e.stopPropagation();
+    navigate('/proyectos/' + idProyecto + '/actualizar');
+  }
+
+  // Borra el proyecto con el endpoint DELETE (tras confirmar) y refresca la lista del sidebar
+  async function eliminarProyecto(e, idProyecto) {
+    e.stopPropagation();
+
+    // Pedimos confirmacion antes de borrar, porque es una accion irreversible
+    const confirmado = window.confirm('¿Seguro que quieres borrar este proyecto? Esta acción no se puede deshacer.');
+    if (!confirmado) {
+      return;
+    }
+
+    try {
+      await apiClient.delete('/proyectos/' + idProyecto);
+
+      // Si estabas viendo el proyecto que se acaba de borrar, vuelves a la lista
+      if (String(idProyecto) === id) {
+        navigate('/proyectos');
+      }
+
+      // Recargamos la lista para que el proyecto borrado desaparezca del sidebar
+      const respuesta = await apiClient.get('/proyectos/');
+      setProyectos(respuesta.data);
+    } catch (err) {
+      console.error('Error al borrar el proyecto', err);
+    }
+  }
+
+
   //Este bloque construye los links de los proyectos en la sidebar, cada usuario tendra diferentes proyectos
   const itemsProyectos = [];
   for (let i = 0; i < proyectos.length; i++) {
@@ -126,10 +160,41 @@ export default function Projects() {
     if (String(proyectos[i].id) === id) {
       itemClass = itemClass + ' ' + styles.sidebarItemActive;
     }
+
+    // Guardamos el id en una variable local para usarlo dentro de los onClick de los iconos
+    const idProyecto = proyectos[i].id;
+
     itemsProyectos.push(
-      <Link key={proyectos[i].id} to={'/proyectos/' + proyectos[i].id} className={itemClass}>
-        {proyectos[i].nombreproyecto}
-      </Link>
+      <div key={idProyecto} className={itemClass} onClick={function () { navigate('/proyectos/' + idProyecto); }}>
+        <span className={styles.proyectoNombre}>{proyectos[i].nombreproyecto}</span>
+
+        {/* Iconos que aparecen al pasar el raton: editar y borrar */}
+        <div className={styles.proyectoAcciones}>
+          
+          <button
+            className={styles.proyectoAccion}
+            onClick={function (e) { editarProyecto(e, idProyecto); }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            </svg>
+          </button>
+
+          <button
+            className={styles.proyectoAccion + ' ' + styles.proyectoAccionBorrar}
+            onClick={function (e) { eliminarProyecto(e, idProyecto); }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+          
+        </div>
+      </div>
     );
   }
 

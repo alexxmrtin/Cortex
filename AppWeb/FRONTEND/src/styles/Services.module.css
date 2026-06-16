@@ -109,6 +109,7 @@
 /* ── Contenido principal ── */
 .content {
   flex: 3;
+  min-width: 0; /* permite que el contenido se encoja en vez de robarle ancho al sidebar con textos largos */
 }
 
 

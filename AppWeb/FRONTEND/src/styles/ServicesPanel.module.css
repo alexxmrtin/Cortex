@@ -156,5 +156,6 @@
   font-size: 0.9rem;
   color: #333;
   line-height: 1.5;
-  white-space: pre-wrap;
+  white-space: pre-wrap;       /* respeta saltos de linea y espacios */
+  overflow-wrap: break-word;   /* parte palabras/URLs muy largas para que no se salgan */
 }

@@ -75,23 +75,23 @@
   color: #555;
 }
 
-.descripcionTexto {
-  width: 100%;
+/* Descripción en modo solo lectura (la edicion se hace en ActualizarProyecto).
+   Mantiene el aspecto de panel que tenia el textarea: fondo blanco, borde gris y esquinas redondeadas. */
+.descripcionValor {
+  margin: 0;
   min-height: 120px;
+  max-height: 200px;           /* la caja no crece mas de esto */
+  overflow-y: auto;            /* si el texto no cabe, scroll dentro de la caja */
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  background: white;
   border: 2px solid #c0bfc2;
+  border-radius: 12px;
   font-size: 0.95rem;
   color: #333;
-  resize: vertical;
-  outline: none;
-  font-family: inherit;
+  line-height: 1.5;
+  white-space: pre-wrap;       /* respeta saltos de linea y espacios */
+  overflow-wrap: break-word;   /* parte palabras/URLs muy largas para que no se salgan */
   box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-
-.descripcionTexto:focus {
-  border-color: #5c6560;
 }
 
 .noEncontrado {
