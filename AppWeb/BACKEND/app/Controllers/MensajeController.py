@@ -218,7 +218,7 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
 
             bloque = f"=== {archivo.rutaRelativa} ===\n{contenido}\n"
 
-            #Recortamos el archivo para usar exactamente los 15000 caracteres.Si el bloque no cabe entero en lo que queda de presupuesto, lo recortamos, lo añadimos y paramos (ya no queda sitio para mas)
+            #Si el bloque no cabe entero en lo que queda de presupuesto, lo recortamos al espacio restante, lo añadimos y paramos (ya no queda sitio para mas)
             espacio_restante = MAX_CARACTERES_CONTEXTO - caracteres_usados
             if len(bloque) > espacio_restante:
                 bloque = bloque[:espacio_restante] + "\n... (archivo recortado por tamaño)\n" 
