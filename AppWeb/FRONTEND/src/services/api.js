@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; //Intenta leer la url de la API en una variable de entorno si no existe usa la otra por default, FastAPI corre en el puerto 800
+// Fuente UNICA de verdad de la URL del backend. Se exporta para que toda la app  (peticiones axios y URLs de imagenes en Storage) use el mismo valor con su fallback. Si VITE_API_URL no llega en el build, cae a localhost:8000 en TODOS los sitios, no solo aqui.
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 
 //Creamos una instancia de axios preconfigurada , en lugar de escribir la url completa en cada peticion, escribes solo el endpoint

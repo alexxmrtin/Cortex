@@ -4,6 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+# VITE_API_URL se congela en el build. Como .env.local no entra en Docker
+# (esta en .dockerignore), lo recibimos como build arg desde docker-compose.
+# El valor por defecto evita que quede "undefined" si no se pasa nada.
+ARG VITE_API_URL=http://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 #Necesitamos el servidor web de los modules node (nginx) para que el frontend se pueda comunicar con el navegador

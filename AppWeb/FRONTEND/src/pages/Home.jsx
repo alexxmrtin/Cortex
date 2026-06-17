@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Home.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
-import apiClient from '../services/api';
+import apiClient, { API_BASE_URL } from '../services/api';
 import Calendar from '../components/Calendar';
 import SelectorModelo from '../components/SelectorModelo';
 
@@ -64,7 +64,7 @@ function SidebarItem({ to, icon, label, expandable, children }) {
 
 
 function getFotoPerfil(fotoPerfil) {
-  if (fotoPerfil) return `${import.meta.env.VITE_API_URL}${fotoPerfil}`;
+  if (fotoPerfil) return `${API_BASE_URL}${fotoPerfil}`;
   return perfilNoDefinido;
 }
 

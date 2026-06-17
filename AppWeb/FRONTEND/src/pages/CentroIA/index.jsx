@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useMatch } from 'react-router-dom';
 import styles from '../../styles/CentroIA.module.css';
 import perfilNoDefinido from '../../assets/perfilNoDefinido.jpg';
-import apiClient from '../../services/api';
+import apiClient, { API_BASE_URL } from '../../services/api';
 import SelectorModelo from '../../components/SelectorModelo';
 
 
@@ -183,7 +183,7 @@ export default function CentroIA() {
 
         <Link to="/ajustes" className={styles.sidebarUser}>
           <img
-            src={usuario?.fotoPerfil ? `${import.meta.env.VITE_API_URL}${usuario.fotoPerfil}` : perfilNoDefinido}
+            src={usuario?.fotoPerfil ? `${API_BASE_URL}${usuario.fotoPerfil}` : perfilNoDefinido}
             alt="perfil"
             className={styles.sidebarAvatar}
           />

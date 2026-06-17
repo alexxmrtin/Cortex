@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from '../styles/Header.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
-import apiClient from '../services/api';
+import apiClient, { API_BASE_URL } from '../services/api';
 
 export default function Header() {
   const location = useLocation();
@@ -25,7 +25,7 @@ export default function Header() {
 
         // Foto de perfil
         if (data.fotoPerfil) {
-          setFotoPerfil(`${import.meta.env.VITE_API_URL}${data.fotoPerfil}`);
+          setFotoPerfil(`${API_BASE_URL}${data.fotoPerfil}`);
         }
 
         // Como el header se carga en todas las paginas, lo que hacemos es cargar dentro de localStorage el tema del usuario(lo obntenemos de la base de datos) para que asi se cargue el tema en las demas paginas.

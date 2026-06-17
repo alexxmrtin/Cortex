@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Outlet, useParams, useNavigate } from 'react-router-dom';
 import styles from '../../styles/Services.module.css';
 import perfilNoDefinido from '../../assets/perfilNoDefinido.jpg';
-import apiClient from '../../services/api';
+import apiClient, { API_BASE_URL } from '../../services/api';
 
 
 export default function Services() {
@@ -170,7 +170,7 @@ export default function Services() {
 
         <Link to="/ajustes" className={styles.sidebarUser}>
           <img
-            src={usuario && usuario.fotoPerfil ? import.meta.env.VITE_API_URL + usuario.fotoPerfil : perfilNoDefinido}
+            src={usuario && usuario.fotoPerfil ? API_BASE_URL + usuario.fotoPerfil : perfilNoDefinido}
             alt="perfil"
             className={styles.sidebarAvatar}
           />

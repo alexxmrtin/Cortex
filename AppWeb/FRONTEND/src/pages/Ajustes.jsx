@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Ajustes.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
-import apiClient from '../services/api';
+import apiClient, { API_BASE_URL } from '../services/api';
 
 const SECCIONES = ['Perfil', 'Seguridad', 'Apariencia', 'Cuenta'];
 
@@ -23,7 +23,7 @@ function SeccionPerfil({ usuario }) {
       setNombre(usuario.nombreUsuario);
       setEmail(usuario.email);
       if (usuario.fotoPerfil) {
-        setFotoPerfil(`${import.meta.env.VITE_API_URL}${usuario.fotoPerfil}`);
+        setFotoPerfil(`${API_BASE_URL}${usuario.fotoPerfil}`);
       }
     }
   }, [usuario]);
