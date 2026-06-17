@@ -285,11 +285,13 @@ export default function Projects() {
             </button>
           </div>
 
-          {/* key={id} es una prop especial de React: cuando cambia, React DESTRUYE este componente
-              y monta uno nuevo desde cero (con su estado reiniciado). Como id es el id del proyecto,
-              al cambiar de proyecto el panel se reinicia limpio en vez de arrastrar los mensajes del
-              proyecto anterior. Es la forma recomendada de "resetear" un componente al cambiar una prop,
-              sin tener que limpiar mensajes/idActual a mano con un useEffect. */}
+          {/*key={id} es una prop especial de React: cuando cambia, React DESTRUYE este componente
+            y monta uno nuevo desde cero (con su estado reiniciado). Como id es el id del proyecto,
+            al cambiar de proyecto el panel se reinicia limpio en vez de arrastrar los mensajes del
+            proyecto anterior. Es la forma recomendada de "resetear" un componente al cambiar una prop,
+            sin tener que limpiar mensajes/idActual a mano con un useEffect.*/}
+          {/*Otra cosa, crearConversacion es una funcion que se ejecuta cuando llamamos al componente,es decir, le estamos pasando como prop la funcion en si, y el componente puede ejecutar esa funcion */}
+          {/*onConversacionCreada es un callback, le estamos pasando el setter del estado ConversacionIAId, es decir, el componente cuando use onConversacionCreada(id), estara seteando el estado ConversacionIAId de esta pagina */}
           <PanelConversacionIA
             key={id}
             conversacionId={conversacionIaId}

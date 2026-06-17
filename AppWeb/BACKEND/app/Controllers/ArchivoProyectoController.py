@@ -15,7 +15,7 @@ router = APIRouter()
 # Los tres se usan juntos cuando el frontend envia un formulario con archivos en vez de JSON
 
 
-# GET    /archivos/proyecto/{proyecto_id}    → Lista todos los archivos del proyecto
+# GET    /archivos/proyecto/{proyecto_id}    → Devuelve todos los archivos del proyecto
 # GET    /archivos/{archivo_id}              → Devuelve el contenido de un archivo
 # POST   /archivos/proyecto/{proyecto_id}    → Sube un archivo al proyecto
 # DELETE /archivos/{archivo_id}              → Elimina un archivo del proyecto
@@ -44,7 +44,7 @@ def obtener_archivos(proyecto_id: int, authorization: str = Header(...)):
     return archivos
 
 #Estructura que recibe: solo el token JWT en el header Authorization
-@router.get("/{archivo_id}", response_model=ArchivoContenido)
+@router.get("/{archivo_id}/contenido", response_model=ArchivoContenido)
 async def obtener_archivo(archivo_id: int, authorization: str = Header(...)):
     usuario = get_usuario_del_token(authorization)
     db = SessionLocal()

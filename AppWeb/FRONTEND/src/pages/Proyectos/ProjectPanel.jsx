@@ -1,8 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../../styles/ProjectPanel.module.css';
 import apiClient from '../../services/api';
 
+
+function IconoCarpeta() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#f0c040" stroke="#d4a000" strokeWidth="1.5">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+}
+
+function IconoArchivo() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg>
+  );
+}
 
 //#################################################################################################
 
@@ -37,11 +54,12 @@ function construirArbol(archivosPlanos) {
       nivelActual = carpeta.contenido; // Bajamos un nivel
     }
 
-    // La ultima parte del array es el archivo
-    nivelActual.push({ nombre: partes[partes.length - 1], tipo: 'archivo' });
+    // La ultima parte del array es el archivo. Guardamos tambien su id (viene de la API) para poder navegar luego a /proyectos/:id/archivo/:archivoId al clicar.
+    nivelActual.push({ nombre: partes[partes.length - 1], tipo: 'archivo', id: archivosPlanos[i].id });
   }
 
-  // Ordena recursivamente cada nivel poniendo carpetas antes que archivos
+
+  // Ordena recursivamente cada nivel poniendo carpetas antes que archivos_
   function ordenarNivel(nodos) {
     nodos.sort(function(a, b) {
       if (a.tipo === 'carpeta' && b.tipo === 'archivo') return -1;
@@ -59,32 +77,13 @@ function construirArbol(archivosPlanos) {
   return raiz;
 }
 
-//################################################################################################
 
 
-
-function IconoCarpeta() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="#f0c040" stroke="#d4a000" strokeWidth="1.5">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-    </svg>
-  );
-}
-
-function IconoArchivo() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/>
-    </svg>
-  );
-}
-
-//################################################################################################3
 
 //Esta funcion la usamos para mostrar las carpetas y lo que contiene dentro,cada archivo/carpeta tiene un nivel, cada nivel se le aumenta una sangria
-function FilaArchivo({ item, nivel }) {
+function FilaArchivo({ item, nivel, idProyecto }) {
   const [abierto, setAbierto] = useState(nivel === 0); //las carpetas del nivel raiz arrancan abiertas, el resto cerradas
+  const navigate = useNavigate();
 
   const paddingLeft = 1 + nivel * 1.2; //Calculamos el margen para dar ese efecto de cascada
 
@@ -92,7 +91,7 @@ function FilaArchivo({ item, nivel }) {
   //Esta funcion se ejecuta cuando el usuario hace click en el archivo/carpeta, si es del tipo "Archivo", no hace nada, si es del tipo carpeta, cambia el usestate a false
   function handleClick() {
     if(item.tipo == 'archivo'){
-      //Pendiente de implementar, quiero que se muestre el archivo, ya sea codigo o texto
+      navigate(`/proyectos/${idProyecto}/archivo/${item.id}`);
     }
 
     if (item.tipo === 'carpeta') {
@@ -111,7 +110,7 @@ function FilaArchivo({ item, nivel }) {
   if (item.tipo === 'carpeta' && abierto && item.contenido) {
     for (let i = 0; i < item.contenido.length; i++) {
       hijos.push(
-        <FilaArchivo key={item.contenido[i].nombre} item={item.contenido[i]} nivel={nivel + 1} />
+        <FilaArchivo key={item.contenido[i].nombre} item={item.contenido[i]} nivel={nivel + 1} idProyecto={idProyecto} />
       );
     }
   }
@@ -154,7 +153,8 @@ export default function ProjectPanel() {
         ]);
 
         setProyecto(respProyecto.data);
-        setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana y obtenemos el arbol
+        setArbol(construirArbol(respArchivos.data)); // Pasamos la lista plana a la funcion contruirArbol y obtenemos un arbol jerarquico por carpetas usando la rutaRelativa de cada archivo
+
       } catch (err) {
         console.error('Error al cargar el proyecto', err);
       } finally {
@@ -173,12 +173,14 @@ export default function ProjectPanel() {
     return <p className={styles.noEncontrado}>Proyecto no encontrado.</p>;
   }
 
+
   const filas = [];
   for (let i = 0; i < arbol.length; i++) {
     filas.push(
-      <FilaArchivo key={arbol[i].nombre} item={arbol[i]} nivel={0} />
+      <FilaArchivo key={arbol[i].nombre} idProyecto={id} item={arbol[i]} nivel={0} />
     );
   }
+
 
   return (
     <div className={styles.panel}>

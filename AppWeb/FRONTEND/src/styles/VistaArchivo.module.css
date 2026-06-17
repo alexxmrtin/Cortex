@@ -1,0 +1,93 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Enlace para volver al arbol de archivos del proyecto */
+.volver {
+  width: fit-content;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--c-text-2);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+
+.volver:hover {
+  color: var(--c-text);
+}
+
+/* Ruta del archivo, con el mismo aspecto que el titulo de ProjectPanel */
+.titulo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin: 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--c-divider);
+  position: relative;       /* contiene el span medidor absoluto */
+  white-space: nowrap;      /* en una sola linea: asi clientWidth es el ancho disponible real */
+  overflow: hidden;
+  text-overflow: ellipsis;  /* red de seguridad si incluso la version acortada no cabe */
+}
+
+/* Copia oculta de la ruta completa: fuera de flujo e invisible, solo se usa para medir su ancho */
+.medidor {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  top: 0;
+  left: 0;
+}
+
+/* Caja contenedora del codigo, mismo estilo de "panel" que el explorador.
+   Ahora es flex (numeros + codigo) y es ella quien gestiona el scroll, para que
+   las dos columnas se desplacen juntas y los numeros sigan alineados con el codigo */
+.visor {
+  display: flex;
+  max-height: 70vh;
+  overflow: auto;
+  background: var(--c-surface);
+  border-radius: 16px;
+  border: 5px solid var(--c-border);
+  box-shadow: 0 2px 8px rgba(99, 94, 94, 0.1);
+}
+
+/* Columna de numeros de linea (gutter) */
+.numeros {
+  margin: 0;
+  padding: 1rem 0.75rem;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.85rem;   /* MISMO tamaño y line-height que .codigo para que cuadren */
+  line-height: 1.6;
+  text-align: right;
+  color: var(--c-muted);
+  background: var(--c-surface);   /* opaco: tapa el codigo al hacer scroll horizontal */
+  border-right: 2px solid var(--c-divider);
+  white-space: pre;
+  user-select: none;     /* los numeros no se seleccionan al copiar el codigo */
+  flex-shrink: 0;
+  position: sticky;      /* se queda pegada a la izquierda al hacer scroll horizontal */
+  left: 0;
+}
+
+/* El bloque de codigo en si */
+.codigo {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--c-text);
+  white-space: pre;       /* respeta indentacion y saltos; no parte lineas */
+  flex: 1;
+}
+
+/* Mensajes de estado (cargando / error / no encontrado), igual que en ProjectPanel */
+.noEncontrado {
+  color: var(--c-muted);
+  font-size: 1rem;
+  padding: 2rem;
+}
