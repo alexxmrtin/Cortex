@@ -6,7 +6,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Etapa de servir
+#Necesitamos el servidor web de los modules node (nginx) para que el frontend se pueda comunicar con el navegador
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
