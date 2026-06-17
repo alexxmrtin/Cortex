@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     ANTHROPIC_API_KEY: str
     GROQ_API_KEY: str
+    REDIS_URL: str  #redis es un miniservidor que creas en tu aplicacion con una base de datos noSQL, actualmente usa por defecto a el puerto 6379 del mismo host y el backend lo usa por ese puerto
 
     class Config:
         env_file = ".env"

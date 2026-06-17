@@ -7,6 +7,7 @@ from app.Models.Conversacion import Conversacion
 from app.Models.ArchivosProyecto import ArchivosProyecto
 from app.Schemas.MensajeSchema import MensajeRespuesta, MensajeChatEntrada
 from app.Core.security import get_usuario_del_token
+from app.Helpers.Cache import incrementar_cache, decrementar_cache
 from app.Services.GeminiService import llamar_gemini, ping_gemini
 from app.Services.ClaudeService import llamar_claude, ping_claude
 from app.Services.GroqService import llamar_groq, ping_groq
@@ -74,17 +75,18 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
 
 
 
-    # Verificamos que el usuario no haya superado el limite diario de 30 peticiones a la IA. Contamos los mensajes con rol='usuario' de hoy en todas sus conversaciones (cada mensaje de usuario = una llamada a la IA)
-    inicio_de_hoy = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    # Verificamos que el usuario no haya superado el limite diario de 30 peticiones a la IA.
+    # Usamos un contador en Redis. La clave lleva la fecha de hoy (ej: "ia:peticiones:7:2026-06-17"), asi cada dia usa una clave distinta y el limite "se reinicia" solo al cambiar de dia.
+    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    clave_limite = "ia:peticiones:" + str(usuario.id) + ":" + hoy
 
-    # SELECT COUNT(*) FROM Mensaje JOIN Conversacion ON Mensaje.conversacion_id = Conversacion.id WHERE Conversacion.usuario_id = usuario.id AND Mensaje.rol = 'usuario' AND Mensaje.fecha >= inicio_de_hoy
-    peticiones_hoy = db.query(Mensaje).join(Conversacion).filter(
-        Conversacion.usuario_id == usuario.id,
-        Mensaje.rol == "usuario",
-        Mensaje.fecha >= inicio_de_hoy
-    ).count()
+    # Creamos una nueva entrada en el servidor REDIS que tendra valor 1 la primera vez y a medida que se vaya incrementando pasara de 1 en 1 hasta obtener 30. El TTL de 24h (86400s) solo se aplica la primera vez del dia (cuando el contador pasa a valer 1), para que la clave caduque sola.
+    peticiones_hoy = incrementar_cache(clave_limite, 86400)
 
-    if peticiones_hoy >= 30:
+    # Si peticiones_hoy obtiene 30 y todavia no ha pasado las 24h decrementamos, cerramos la conexion de la db y mandamos un mensaje de error al frontend
+    if peticiones_hoy is not None and peticiones_hoy > 30:
+        # Esta peticion ya se pasa del tope: deshacemos el incremento para no consumir cupo y rechazamos.
+        decrementar_cache(clave_limite)
         db.close()
         raise HTTPException(status_code=429, detail="Has alcanzado el límite diario de 30 peticiones")
 
@@ -95,7 +97,6 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
     db.add(mensaje_usuario)
     db.commit()
 
-
     # Recuperamos el historial completo (incluye el mensaje que acabamos de guardar)
     # SELECT * FROM Mensaje WHERE conversacion_id = conversacion_id ORDER BY fecha ASC
     historial = db.query(Mensaje).filter(Mensaje.conversacion_id == conversacion_id).order_by(Mensaje.fecha).all()
@@ -103,7 +104,10 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
     # El historial para la IA es todo menos el último mensaje (que es el que acaba de enviar)
     historial_previo = historial[:-1]
 
+
     #------------------------------------------------------------------------------------------------------------
+    #Motor RAG
+
     # Si la conversación está vinculada a un proyecto, le damos a la IA el contenido de los archivos relevantes como contexto
     
     # FLUJO DEL BLOQUE:
@@ -254,9 +258,10 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
 
 
     except Exception as e:
-        # Si la IA falla, borramos el mensaje del usuario para no dejarlo huerfano sin respuesta
+        # Si la IA falla, borramos el mensaje del usuario para no dejarlo huerfano sin respuesta y devolvemos el cupo al contador de Redis: esta peticion no ha llegado a completarse, asi que no debe contar contra el limite diario.
         db.delete(mensaje_usuario)
         db.commit()
+        decrementar_cache(clave_limite)
         db.close()
         raise HTTPException(status_code=500, detail="Error al llamar a " + usuario.modeloIA + " :" + str(e))
 

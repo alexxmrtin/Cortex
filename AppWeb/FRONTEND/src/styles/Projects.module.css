@@ -7,7 +7,7 @@
 }
 
 .sidebar {
-  flex: 0 0 400px; /* ancho fijo: no crece ni encoge */
+  flex: 0 0 350px; /* ancho fijo: no crece ni encoge */
   min-width: 0;    /* anula el min-width:auto por defecto del flex item; sin esto un nombre largo expande el sidebar igual */
   overflow: hidden;
   display: flex;

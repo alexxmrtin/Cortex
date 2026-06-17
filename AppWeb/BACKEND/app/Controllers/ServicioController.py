@@ -12,6 +12,7 @@ router = APIRouter()
 # POST   /servicios/            → Crea un nuevo servicio
 # GET    /servicios/{id}        → Obtiene un servicio concreto
 # PATCH  /servicios/{id}        → Actualiza los datos del servicio
+# GET    /servicios/{id}/ping   → Hace un ping a un servicio para ver si esta activo
 # DELETE /servicios/{id}        → Elimina el servicio
 
 

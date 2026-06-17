@@ -11,6 +11,7 @@ email-validator==2.2.0 #Validar que un email tiene formato correcto
 google-genai #SDK de Google para llamar a Gemini (nuevo paquete, reemplaza google-generativeai)
 anthropic #SDK de Anthropic para llamar a Claude
 groq #SDK de Groq para llamar a Llama
+redis==5.2.1 #Cliente de Redis para el cacheo en memoria (contadores, pings, etc.), redis es un miniservidor que creas en tu aplicacion con una base de datos noSQL
 
 #Dependencias del backend
 
