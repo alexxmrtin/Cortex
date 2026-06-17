@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from app.Core.database import SessionLocal
 from app.Models.ArchivosProyecto import ArchivosProyecto
 from app.Models.Proyecto import Proyecto
-from app.Schemas.ArchivosProyectoSchema import ArchivoRespuesta
+from app.Schemas.ArchivosProyectoSchema import ArchivoRespuesta,ArchivoContenido
 from app.Core.security import get_usuario_del_token
 
 router = APIRouter()
@@ -16,6 +16,7 @@ router = APIRouter()
 
 
 # GET    /archivos/proyecto/{proyecto_id}    → Lista todos los archivos del proyecto
+# GET    /archivos/{archivo_id}              → Devuelve el contenido de un archivo
 # POST   /archivos/proyecto/{proyecto_id}    → Sube un archivo al proyecto
 # DELETE /archivos/{archivo_id}              → Elimina un archivo del proyecto
 
@@ -41,6 +42,41 @@ def obtener_archivos(proyecto_id: int, authorization: str = Header(...)):
     db.close()
 
     return archivos
+
+#Estructura que recibe: solo el token JWT en el header Authorization
+@router.get("/{archivo_id}", response_model=ArchivoContenido)
+async def obtener_archivo(archivo_id: int, authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+    db = SessionLocal()
+
+    #Buscamos el archivo y verificamos que pertenece al usuario
+    archivo = db.query(ArchivosProyecto).join(Proyecto).filter(ArchivosProyecto.id==archivo_id,Proyecto.usuario_id == usuario.id).first()
+
+    #Validamos
+    if not archivo:
+        db.close()
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+    if not archivo.rutaDisco or not os.path.exists(archivo.rutaDisco):
+        db.close()
+        raise HTTPException(status_code=404, detail="El archivo no existe")
+
+    #Leemos en memoria lo guardamos en una variable
+    try:
+        with open(archivo.rutaDisco, "r", encoding="utf-8") as f:
+            contenido = f.read()
+    except:
+        db.close()
+        raise HTTPException(status_code=415, detail="Este archivo no se puede previsualizar como texto")
+
+    db.close()
+
+    #Devolvemos el archivo al usuario en formato json
+    return {
+        "nombre": archivo.nombre,
+        "rutaRelativa": archivo.rutaRelativa,
+        "contenido": contenido
+    }
 
 
 
@@ -122,3 +158,4 @@ def eliminar_archivo(archivo_id: int, authorization: str = Header(...)):
     db.close()
 
     return {"mensaje": "Archivo eliminado correctamente"}
+

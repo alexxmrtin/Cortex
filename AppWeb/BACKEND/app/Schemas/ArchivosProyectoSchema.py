@@ -7,3 +7,9 @@ class ArchivoRespuesta(BaseModel):
     rutaRelativa: str
 
     model_config = {"from_attributes": True}
+
+#Datos que envias al frontend para mostrar el archivo
+class ArchivoContenido(BaseModel):
+    nombre: str
+    rutaRelativa: str
+    contenido: str

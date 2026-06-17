@@ -8,6 +8,7 @@ import Projects from './pages/Proyectos/index';
 import ProjectPanel from './pages/Proyectos/ProjectPanel';
 import AgregarProyecto from './pages/Proyectos/AgregarProyecto';
 import ActualizarProyecto from './pages/Proyectos/ActualizarProyecto';
+import VistaArchivo from './pages/Proyectos/VistaArchivo';
 import CentroIA from './pages/CentroIA/index';
 import EmptyStateIA from './pages/CentroIA/EmptyStateIA';
 import ConversacionIA from './pages/CentroIA/ConversacionIA';
@@ -35,6 +36,7 @@ export default function App() {
           <Route path='/proyectos' element={<Projects />}>
             <Route path=':id' element={<ProjectPanel />} />
             <Route path=':id/actualizar' element={<ActualizarProyecto />} />
+            <Route path=':id/archivo/:archivoId' element={<VistaArchivo />} />
             <Route path='agregarProyecto' element={<AgregarProyecto />} />
           </Route>
 
