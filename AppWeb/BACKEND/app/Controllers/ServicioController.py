@@ -139,6 +139,7 @@ def ping_servicio(servicio_id: int, authorization: str = Header(...)):
         
         resultado = sock.connect_ex((servicio.host, servicio.puerto)) # Aqui se inicia una conexion con el host, connect_ex devuelve 0 si conecta, otro numero si falla
         sock.close()
+
         
         if resultado == 0:
             vivo = True

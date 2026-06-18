@@ -11,6 +11,7 @@ from app.Helpers.Cache import incrementar_cache, decrementar_cache
 from app.Services.GeminiService import llamar_gemini, ping_gemini
 from app.Services.ClaudeService import llamar_claude, ping_claude
 from app.Services.GroqService import llamar_groq, ping_groq
+from app.Helpers.Cache import guardar_cache,obtener_cache
 
 router = APIRouter()
 
@@ -25,6 +26,14 @@ router = APIRouter()
 def health_modelo(authorization: str = Header(...)):
     usuario = get_usuario_del_token(authorization)
 
+    #Implementamos caching de 15 segundos para no estar gastando token continuamente
+    clave = f"health:modelo:{usuario.modeloIA}"
+    cacheado = obtener_cache(clave);
+
+    if cacheado is not None:
+        return {"estado" : cacheado}
+
+
     if usuario.modeloIA == "claude-sonnet-4-6":
         activo = ping_claude()
     elif usuario.modeloIA == "llama-3.3-70b-versatile":
@@ -33,8 +42,14 @@ def health_modelo(authorization: str = Header(...)):
         activo = ping_gemini()
 
     if activo:
+        estado = "ok"
+        guardar_cache(clave,estado,15)
+        
         return {"estado": "ok"}
     else:
+        estado = "error"
+        guardar_cache(clave,estado,15)
+        
         return {"estado": "error"}
 
 
@@ -84,7 +99,7 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
     peticiones_hoy = incrementar_cache(clave_limite, 86400)
 
     # Si peticiones_hoy obtiene 30 y todavia no ha pasado las 24h decrementamos, cerramos la conexion de la db y mandamos un mensaje de error al frontend
-    if peticiones_hoy is not None and peticiones_hoy > 30:
+    if peticiones_hoy is not None and peticiones_hoy > 50:
         # Esta peticion ya se pasa del tope: deshacemos el incremento para no consumir cupo y rechazamos.
         decrementar_cache(clave_limite)
         db.close()

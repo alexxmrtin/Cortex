@@ -28,7 +28,7 @@ export default function SelectorModelo({ modeloActual, onCambiar }) {
   const wrapperRef = useRef(null);
 
 
-  //Esto consume 1 token de la IA, implementar en el futuro caching con REDIS
+  //Esto consume 1 token de la IA, esta implementado caching de 15 segundos para reducir el consumo de tokens
   useEffect(function () {
     setEstadoModelo('comprobando');
     apiClient.get('/mensajes/health')
