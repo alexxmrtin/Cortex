@@ -5,6 +5,7 @@ from app.Models.Servicio import Servicio
 from app.Schemas.ServicioSchema import ServicioCrear, ServicioRespuesta, ServicioActualizar
 from app.Core.security import get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
+from app.Helpers.Log import log_error,log_warning
 
 router = APIRouter()
 
@@ -146,7 +147,8 @@ def ping_servicio(servicio_id: int, authorization: str = Header(...)):
         else:
             vivo = False
             
-    except Exception:
+    except Exception as e:
+        log_warning(f"No se pudo comprobar el servicio {servicio.id} ({servicio.host}:{servicio.puerto}): {e}")
         vivo = False
 
     return {"vivo": vivo}

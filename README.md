@@ -15,7 +15,9 @@ Cortex te permite subir proyectos completos (carpetas con su estructura de archi
 - 🤖 **Centro de IA (RAG)** — chatea con la IA usando los archivos de un proyecto como contexto. El backend detecta qué archivos menciona tu pregunta y se los pasa al modelo.
 - 🔀 **Multi-modelo** — elige entre **Gemini 2.0 Flash** (Google), **Claude Sonnet 4.6** (Anthropic) o **Llama 3.3 70B** (Groq). El modelo activo se guarda por usuario.
 - 💬 **Historial persistente** — las conversaciones se guardan en la base de datos y se reenvían completas al modelo en cada llamada, para mantener el contexto entre sesiones.
-- 🛡️ **Límites de uso** — máximo 30 peticiones de IA por usuario al día y 20 conversaciones por usuario (la más antigua se elimina al superar el límite).
+- 🛡️ **Límites de uso** — máximo 50 peticiones de IA por usuario al día (contador en Redis que se reinicia solo cada día) y 20 conversaciones por usuario (la más antigua se elimina al superar el límite).
+- ⚡ **Caché con Redis** — contador del límite diario de IA y caché del estado de salud del modelo, para evitar consultas y llamadas de pago repetidas.
+- 📋 **Logging** — registro centralizado (módulo `logging`) con niveles, rotación de ficheros y un manejador global que captura cualquier error no controlado.
 
 ---
 
@@ -33,10 +35,10 @@ Cortex/
 │   │   │   ├── Models/        # Modelos SQLAlchemy (tablas)
 │   │   │   ├── Schemas/       # Schemas Pydantic (validación/serialización)
 │   │   │   ├── Services/      # Integraciones con Gemini, Claude y Groq
-│   │   │   ├── Helpers/       # Validación, sanitización y logging
+│   │   │   ├── Helpers/       # Validación, sanitización, caché (Redis) y logging
 │   │   │   └── MiddleWares/   # Configuración de CORS
 │   │   ├── Storage/      # Archivos subidos por los usuarios (en disco)
-│   │   ├── Logs/         # Logs de errores de los servicios de IA
+│   │   ├── Logs/         # Log general (cortex.log) + logs por servicio de IA
 │   │   ├── cortex.db     # Base de datos SQLite
 │   │   ├── main.py       # Punto de entrada de la API
 │   │   └── requirements.txt
@@ -59,6 +61,8 @@ Cortex/
 | **Auth**     | JWT (python-jose) + hashing de contraseñas con bcrypt (passlib) |
 | **IA**       | `google-genai` (Gemini), `anthropic` (Claude), `groq` (Llama) |
 | **BD**       | SQLite (migración a PostgreSQL prevista) |
+| **Caché**    | Redis (cliente `redis`) — contador del límite diario y caché del *health* del modelo |
+| **Logging**  | Módulo `logging` de la librería estándar (niveles + rotación de ficheros) |
 
 ---
 
@@ -104,7 +108,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 GEMINI_API_KEY=tu_api_key
 ANTHROPIC_API_KEY=tu_api_key
 GROQ_API_KEY=tu_api_key
+REDIS_URL=redis://localhost:6379/0
+STORAGE_BASE=Storage/ArchivosUsuarios
 ```
+
+> **Redis** debe estar corriendo para que funcionen el contador del límite diario y la caché del *health* (`redis-server` en local). Si Redis no está disponible, la app **no se rompe**: simplemente deja de cachear y el límite diario no se aplica (los helpers toleran que Redis esté caído).
 
 Arrancar el servidor (las tablas se crean automáticamente al iniciar):
 
@@ -175,6 +183,70 @@ Cuando una conversación está vinculada a un proyecto, en cada mensaje el backe
 Tras la respuesta, tanto el mensaje del usuario como el de la IA se guardan en la base de datos.
 
 > Como ningún modelo recuerda conversaciones entre llamadas, **todo el historial se reenvía en cada petición** para mantener la coherencia.
+
+---
+
+## ⚡ Caché con Redis
+
+El backend usa **Redis** (almacén clave-valor en memoria) para datos que se consultan mucho y que cuesta producir. Toda la lógica se centraliza en el helper [`app/Helpers/Cache.py`](AppWeb/BACKEND/app/Helpers/Cache.py), que envuelve al cliente `redis` y expone funciones cómodas:
+
+| Función | Qué hace |
+|---------|----------|
+| `obtener_cache(clave)` | Lee un valor (o `None` si no existe / Redis no responde) |
+| `guardar_cache(clave, valor, ttl_segundos)` | Guarda con expiración opcional |
+| `borrar_cache(clave)` | Invalida una clave |
+| `incrementar_cache(clave, ttl_segundos)` | `+1` atómico; el TTL solo se fija la primera vez (contadores) |
+| `decrementar_cache(clave)` | `-1` atómico (deshacer un incremento) |
+
+> **Tolerancia a fallos:** todas las funciones van en `try/except`. Si Redis está caído, devuelven `None`/no hacen nada y **la app sigue funcionando** sin caché. Un fallo de Redis nunca tumba una petición.
+
+**Usos actuales:**
+
+1. **Contador del límite diario de IA** — en cada chat se hace `incrementar_cache("ia:peticiones:{usuario_id}:{YYYY-MM-DD}", 86400)`. La clave lleva la fecha, así cada día usa una clave distinta y el límite **se reinicia solo** al cambiar de día (TTL de 24 h). Al superar el tope se rechaza la petición con un `429` (y se decrementa el contador para no consumir cupo). Sustituye al antiguo `COUNT(*)` contra la base de datos.
+2. **Caché del *health* del modelo** — `GET /mensajes/health` hace una llamada real (de pago) a la API del proveedor. El resultado se cachea **15 s** con clave por modelo (`health:modelo:{modeloIA}`), de modo que un único chequeo se reutiliza para todos los usuarios durante ese tiempo.
+
+La conexión se configura con `REDIS_URL` en el `.env` (cliente único compartido en todo el proceso, conexión perezosa). En **local** apunta a `redis://localhost:6379/0` (requiere `redis-server` corriendo); en **Docker** hay un contenedor `redis` propio y `docker-compose.yml` sobreescribe la variable a `redis://redis:6379/0`.
+
+---
+
+## 📋 Logging
+
+El registro se centraliza en el helper [`app/Helpers/Log.py`](AppWeb/BACKEND/app/Helpers/Log.py), construido sobre el módulo **`logging`** de la librería estándar (no requiere dependencia en `requirements.txt`). Aporta **niveles**, **rotación de ficheros** (5 MB × 3 copias) y salida simultánea a **fichero y consola**, con formato unificado:
+
+```
+2026-06-18 12:03:57 | ERROR | cortex | Error no controlado en GET /_boom: explosion de prueba
+```
+
+**Funciones disponibles:**
+
+| Función | Nivel | Uso |
+|---------|-------|-----|
+| `log_info(mensaje)` | INFO | eventos de auditoría/negocio |
+| `log_warning(mensaje)` | WARNING | anomalías y fallos de cliente (no son bugs del servidor) |
+| `log_error(mensaje, error=None)` | ERROR | errores reales; si se pasa la excepción, vuelca el *traceback* |
+| `log_error_servicio(servicio, error)` | ERROR | fallos de los proveedores de IA (fichero por servicio) |
+
+**Destino de los logs** (carpeta `Logs/`):
+- `Logs/cortex.log` → log general de la aplicación.
+- `Logs/ServicesLogs/{Servicio}Logs/{servicio}.txt` → un fichero por servicio de IA (Claude/Gemini/Groq).
+
+**Manejador global de errores** — registrado en `main.py` con `@app.exception_handler(Exception)`: captura **cualquier excepción no controlada** de cualquier endpoint (los `500` reales), la registra con método + ruta + *traceback*, y devuelve un `500` limpio sin filtrar el *stacktrace* al cliente. Las `HTTPException` intencionadas (404, 400, 429…) las sigue gestionando FastAPI aparte.
+
+**Eventos registrados actualmente:**
+
+| Evento | Nivel | Dónde |
+|--------|-------|-------|
+| Registro de usuario | INFO | `UsuarioController` |
+| Cuenta eliminada | INFO | `UsuarioController` |
+| Límite diario de IA alcanzado | INFO | `MensajeController` |
+| Login fallido (email o contraseña) | WARNING | `UsuarioController` |
+| Token mal formado / inválido / usuario inexistente | WARNING | `security.py` |
+| BD↔disco descuadrados / servicio con host:puerto inválido | WARNING | `ArchivoProyecto` / `ServicioController` |
+| Fallo al leer/subir archivo, fallo al borrar proyecto | ERROR | `ArchivoProyecto` / `ProyectoController` |
+| Fallo de un proveedor de IA | ERROR | `Services/*` |
+| Cualquier excepción no controlada (500) | ERROR | manejador global en `main.py` |
+
+> **Seguridad:** nunca se registran contraseñas ni tokens; solo el hecho del fallo y, como mucho, el email o el `id` de usuario.
 
 ---
 

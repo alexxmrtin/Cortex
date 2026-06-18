@@ -5,13 +5,11 @@ from app.Core.database import SessionLocal
 from app.Models.Proyecto import Proyecto
 from app.Schemas.ProyectoSchema import ProyectoCrear, ProyectoRespuesta, ProyectoActualizar
 from app.Core.security import get_usuario_del_token
+from app.Core.config import settings
 from app.Helpers.Sanitizar import sanitizar
+from app.Helpers.Log import log_error,log_warning
 
 router = APIRouter()
-
-# Carpeta raiz donde se guardan los archivos en disco: Storage/ArchivosUsuarios/{usuario_id}/{proyecto_id}/
-# (mismo valor que en ArchivoProyectoController.py)
-STORAGE_BASE = "Storage/ArchivosUsuarios"
 
 # GET    /proyectos/            → Lista todos los proyectos del usuario
 # POST   /proyectos/            → Crea un nuevo proyecto
@@ -121,9 +119,14 @@ def eliminar_proyecto(proyecto_id: int, authorization: str = Header(...)):
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
 
     # El cascade="all, delete-orphan" del modelo solo borra las filas de ArchivosProyecto en la BD, no los ficheros en disco. Por eso borramos a mano la carpeta del proyecto en Storage para no dejar archivos huerfanos.
-    carpeta_proyecto = os.path.join(STORAGE_BASE, str(usuario.id), str(proyecto_id))
+    carpeta_proyecto = os.path.join(settings.STORAGE_BASE, str(usuario.id), str(proyecto_id))
     if os.path.exists(carpeta_proyecto):
-        shutil.rmtree(carpeta_proyecto)
+        try:
+            shutil.rmtree(carpeta_proyecto)
+        except Exception as e:
+            log_error(f"No se pudo borrar la carpeta del proyecto {proyecto_id} en disco ({carpeta_proyecto})", e)
+            db.close()
+            raise HTTPException(status_code=500, detail="No se pudo eliminar el proyecto")
 
     db.delete(proyecto)
     db.commit()

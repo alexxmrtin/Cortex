@@ -10,11 +10,22 @@ services:
       # cortex_db (carpeta /app/data) para que NO se borre al reconstruir.
       # Son 4 barras porque es una ruta absoluta: sqlite:/// + /app/data/...
       - DATABASE_URL=sqlite:////app/data/cortex.db
+      # Sobreescribe REDIS_URL del .env: dentro de Docker el host NO es localhost,
+      # sino el nombre del servicio (redis), resuelto por la red interna de compose.
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./AppWeb/BACKEND/Storage:/app/Storage
       - ./AppWeb/BACKEND/Logs:/app/Logs
       - ./AppWeb/BACKEND/Cache:/app/Cache
       - cortex_db:/app/data        # cajón persistente donde vive cortex.db
+    depends_on:
+      - redis
+
+  # Servidor Redis: cache en memoria.
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data        # persiste los datos para que el contador sobreviva a reinicios
 
   frontend:
     build:
@@ -41,4 +52,5 @@ services:
 
 volumes:
   cortex_db:
+  redis_data:
   # pg_data:

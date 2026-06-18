@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from app.Core.config import settings
+from app.Helpers.Log import log_warning
 
 # Instancia de la clase CryptContext, usamos bcrypt como algoritmo para hashear contraseñas, se pueden usar funciones como .hash() o .verify()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -44,11 +45,17 @@ def get_usuario_del_token(authorization: str):
     from fastapi import HTTPException           # Para lanzar errores HTTP al frontend
 
 
-    # El header llega como "Bearer <token>", hacemos split por el espacio y cogemos la segunda parte
-    token = authorization.split(" ")[1]
+    # El header llega como "Bearer <token>". Si viene mal formado (sin espacio, vacio...), el split no daria la segunda parte y reventaria con IndexError; lo controlamos y devolvemos un 401 limpio.
+    partes = authorization.split(" ")
+    if len(partes) < 2:
+        log_warning("Header Authorization mal formado en una peticion autenticada")
+        raise HTTPException(status_code=401, detail="Token invalido o expirado")
+
+    token = partes[1]
     payload = decodificar_token(token)
-    
+
     if not payload:
+        log_warning("Token invalido o expirado presentado en una peticion autenticada")
         raise HTTPException(status_code=401, detail="Token invalido o expirado")
 
     db = SessionLocal()
@@ -56,6 +63,8 @@ def get_usuario_del_token(authorization: str):
     db.close()
 
     if not usuario:
+        # Token valido pero el usuario ya no existe (p. ej. cuenta borrada con un token todavia vivo)
+        log_warning(f"Token valido pero el usuario {payload.get('id')} ya no existe en la BD")
         raise HTTPException(status_code=401, detail="Usuario no encontrado")
 
     return usuario

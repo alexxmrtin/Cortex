@@ -7,11 +7,11 @@ from app.Models.Conversacion import Conversacion
 from app.Models.ArchivosProyecto import ArchivosProyecto
 from app.Schemas.MensajeSchema import MensajeRespuesta, MensajeChatEntrada
 from app.Core.security import get_usuario_del_token
-from app.Helpers.Cache import incrementar_cache, decrementar_cache
+from app.Helpers.Cache import incrementar_cache, decrementar_cache,guardar_cache,obtener_cache
+from app.Helpers.Log import log_info
 from app.Services.GeminiService import llamar_gemini, ping_gemini
 from app.Services.ClaudeService import llamar_claude, ping_claude
 from app.Services.GroqService import llamar_groq, ping_groq
-from app.Helpers.Cache import guardar_cache,obtener_cache
 
 router = APIRouter()
 
@@ -103,7 +103,8 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
         # Esta peticion ya se pasa del tope: deshacemos el incremento para no consumir cupo y rechazamos.
         decrementar_cache(clave_limite)
         db.close()
-        raise HTTPException(status_code=429, detail="Has alcanzado el límite diario de 30 peticiones")
+        log_info(f"Limite diario de IA alcanzado por el usuario {usuario.id}")
+        raise HTTPException(status_code=429, detail="Has alcanzado el límite diario de 50 peticiones")
 
 
 

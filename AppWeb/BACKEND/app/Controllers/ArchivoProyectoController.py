@@ -6,6 +6,9 @@ from app.Models.ArchivosProyecto import ArchivosProyecto
 from app.Models.Proyecto import Proyecto
 from app.Schemas.ArchivosProyectoSchema import ArchivoRespuesta,ArchivoContenido
 from app.Core.security import get_usuario_del_token
+from app.Core.config import settings
+from app.Helpers.Log import log_info, log_warning, log_error
+
 
 router = APIRouter()
 
@@ -20,7 +23,6 @@ router = APIRouter()
 # POST   /archivos/proyecto/{proyecto_id}    → Sube un archivo al proyecto
 # DELETE /archivos/{archivo_id}              → Elimina un archivo del proyecto
 
-STORAGE_BASE = "Storage/ArchivosUsuarios"  # Carpeta raiz: Storage/{usuario_id}/{proyecto_id}/
 
 
 
@@ -58,6 +60,7 @@ async def obtener_archivo(archivo_id: int, authorization: str = Header(...)):
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
     if not archivo.rutaDisco or not os.path.exists(archivo.rutaDisco):
+        log_warning(f"Archivo {archivo.id} existe en la BD pero el fichero falta en disco {archivo.rutaDisco}")
         db.close()
         raise HTTPException(status_code=404, detail="El archivo no existe")
 
@@ -65,7 +68,8 @@ async def obtener_archivo(archivo_id: int, authorization: str = Header(...)):
     try:
         with open(archivo.rutaDisco, "r", encoding="utf-8") as f:
             contenido = f.read()
-    except:
+    except Exception as e:
+        log_error(f"No se pudo leer el archivo {archivo.id} ({archivo.rutaDisco})", e)
         db.close()
         raise HTTPException(status_code=415, detail="Este archivo no se puede previsualizar como texto")
 
@@ -105,30 +109,39 @@ async def subir_archivo(
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
 
     # Construimos la ruta completa usando rutaRelativa para respetar la estructura de carpetas original
-    carpeta_destino = os.path.join(STORAGE_BASE, str(usuario.id), str(proyecto_id))
+    carpeta_destino = os.path.join(settings.STORAGE_BASE, str(usuario.id), str(proyecto_id))
     ruta_disco = os.path.join(carpeta_destino, rutaRelativa) #Entiende que, cuando un usuario envia un proyecto, envia archivo a archivo usando este endpoint, entonces esto lo que est haciendo es reconstruir todo el proyecto en la memoria del servidor, este caso en /Storage
 
-    # Creamos todos los subdirectorios necesarios (ej: src/components/ dentro del proyecto)
-    os.makedirs(os.path.dirname(ruta_disco), exist_ok=True)
+    # Escritura en disco + alta en BD. Lo envolvemos porque puede fallar (disco lleno, permisos, E/S, BD).
+    try:
+        # Creamos todos los subdirectorios necesarios (ej: src/components/ dentro del proyecto)
+        os.makedirs(os.path.dirname(ruta_disco), exist_ok=True)
 
+        # Guardar el archivo en disco de forma asincrona, utilizamos la libreria aiofiles que nos permite trabajar de forma asincrona
+        #"wb" significa write y binary, se abre el archivo en modo binario para escribir en el
+        async with aiofiles.open(ruta_disco, "wb") as f:
+            contenido = await archivo.read() #await para esperar que termine la llamada al sistema, contenido tiene el archivo en bytes
+            await f.write(contenido) #escribe el contenido del archivo, en la ruta designada
 
-    # Guardar el archivo en disco de forma asincrona, utilizamos la libreria aiofiles que nos permite trabajar de forma asincrona
-    #"wb" significa write y binary, se abre el archivo en modo binario para escribir en el
-    async with aiofiles.open(ruta_disco, "wb") as f: 
-        contenido = await archivo.read() #await para esperar que termine la llamada al sistema, contenido tiene el archivo en bytes
-        await f.write(contenido) #escribe el contenido del archivo, en la ruta designada
+        #Y para finalizar lo vamos a insertar en la base de datos(solo ponemos los metadatos del archivo)
+        nuevo_archivo = ArchivosProyecto(
+            nombre=archivo.filename,
+            rutaRelativa=rutaRelativa,
+            rutaDisco=ruta_disco,
+            proyecto_id=proyecto_id
+        )
 
-    #Y para finalizar lo vamos a insertar en la base de datos(solo ponemos los metadatos del archivo)
-    nuevo_archivo = ArchivosProyecto(
-        nombre=archivo.filename,
-        rutaRelativa=rutaRelativa,
-        rutaDisco=ruta_disco,
-        proyecto_id=proyecto_id
-    )
+        db.add(nuevo_archivo)
+        db.commit()
+        db.refresh(nuevo_archivo)
 
-    db.add(nuevo_archivo)
-    db.commit()
-    db.refresh(nuevo_archivo)
+    except Exception as e:
+        #No hace falta borrar nada en disco, eso ya lo hacemos al borrar el proyecto 
+
+        log_error(f"Fallo la subida del archivo '{rutaRelativa}' al proyecto {proyecto_id}", e)
+        db.close()
+        raise HTTPException(status_code=500, detail="No se pudo guardar el archivo")
+
     db.close()
 
     return nuevo_archivo

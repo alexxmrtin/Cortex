@@ -8,6 +8,7 @@ from app.Schemas.UsuarioSchema import UsuarioCrear, UsuarioLogin, UsuarioRespues
 from app.Core.security import hashear_contrasena, verificar_contrasena, crear_token, get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
 from app.Helpers.Validar import validar_contrasena, validar_nombre_usuario
+from app.Helpers.Log import log_info, log_warning
 
 STORAGE_FOTOS = "Storage/FotoPerfilUsuarios"
 
@@ -55,6 +56,7 @@ def registro(datos: UsuarioCrear):
     db.add(usuario)    # Le decimos a SQLAlchemy que queremos insertar este objeto en la bd
     db.commit()        # Al hacer el commit hacemos el INSERT en la bd
     db.refresh(usuario) # Actualizamos la instancia con el id asignado por la bd
+    log_info(f"Nuevo usuario registrado: {usuario.id} ({usuario.email})")
     db.close()
 
     return usuario
@@ -69,11 +71,13 @@ def login(datos: UsuarioLogin):
     usuario = db.query(Usuario).filter(Usuario.email == datos.email).first() # SELECT * FROM Usuario WHERE email = datos.email LIMIT 1
     if not usuario:
         db.close()
+        log_warning(f"Login fallido: no existe ningun usuario con el email {datos.email}")
         raise HTTPException(status_code=401, detail="Email incorrecto")
 
     # Verificar la contrasena
     if not verificar_contrasena(datos.contrasena, usuario.contrasena):
         db.close()
+        log_warning(f"Login fallido: contrasena incorrecta para el email {datos.email}")
         raise HTTPException(status_code=401, detail="Contrasena incorrecta")
 
     db.close()
@@ -188,7 +192,11 @@ def eliminar_usuario(authorization: str = Header(...)):
 
     db = SessionLocal()
     usuario = db.query(Usuario).filter(Usuario.id == usuario.id).first()
+    # Guardamos id y email para el log antes de borrar, porque tras el delete el objeto deja de ser accesible
+    usuario_id = usuario.id
+    email = usuario.email
     db.delete(usuario)
     db.commit()
     db.close()
+    log_info(f"Cuenta eliminada: usuario {usuario_id} ({email})")
     return {"mensaje": "Cuenta eliminada correctamente"}
