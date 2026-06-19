@@ -10,6 +10,7 @@ class UsuarioCrear(BaseModel):
 class UsuarioLogin(BaseModel):
     email: EmailStr
     contrasena: str
+    recordar: bool = False # Si es True, el token dura mucho mas (sesion persistente "recordarme")
 
 # Datos que se devuelven al frontend (nunca la contrasena)
 class UsuarioRespuesta(BaseModel):

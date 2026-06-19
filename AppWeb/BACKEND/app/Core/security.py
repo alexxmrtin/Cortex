@@ -18,11 +18,15 @@ def verificar_contrasena(contrasena: str, contrasena_hasheada: str) -> bool:
     return pwd_context.verify(contrasena, contrasena_hasheada)
 
 
-# Crea un token JWT con los datos del usuario y una fecha de expiracion
-def crear_token(datos: dict) -> str:
+# Crea un token JWT con los datos del usuario y una fecha de expiracion. minutos_expiracion permite controlar cuanto dura la sesion (p. ej. el "recordarme" del login).
+# Si no se pasa, usa el valor por defecto del .env (ACCESS_TOKEN_EXPIRE_MINUTES).
+def crear_token(datos: dict, minutos_expiracion: int = None) -> str:
     payload = datos.copy() #Copia los datos en otra variable
 
-    expiracion = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES) #Definimos el tiempo de uso que tiene el token JWT, definimos ese tiempo en el .env
+    if minutos_expiracion is None:
+        minutos_expiracion = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=minutos_expiracion) #Definimos el tiempo de uso que tiene el token JWT
 
     payload["exp"] = expiracion #Creamos un nuevo par clave-valor necesario para crear el token JWT y lo añadimos al payload
 

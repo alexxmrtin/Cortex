@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Ajustes.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
-import apiClient, { API_BASE_URL } from '../services/api';
+import apiClient, { API_BASE_URL, obtenerToken, borrarToken } from '../services/api';
 
 const SECCIONES = ['Perfil', 'Seguridad', 'Apariencia', 'Cuenta'];
 
@@ -266,7 +266,7 @@ function SeccionCuenta() {
   async function handleEliminarCuenta() {
     try {
       await apiClient.delete('/usuarios/me');
-      localStorage.removeItem('authToken');
+      borrarToken();
       navigate('/');
     } catch (err) {
       console.error('Error al eliminar la cuenta', err);
@@ -310,7 +310,7 @@ function SeccionCuenta() {
 export default function Ajustes() {
   const [seccionActiva, setSeccionActiva] = useState('Perfil');
 
-  const token = localStorage.getItem('authToken');
+  const token = obtenerToken();
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
 

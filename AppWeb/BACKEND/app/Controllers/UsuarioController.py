@@ -65,15 +65,15 @@ def registro(datos: UsuarioCrear):
 # Estructura que recibe: datos = { "email": str, "contrasena": str }
 @router.post("/login")
 def login(datos: UsuarioLogin):
-    db = SessionLocal()
 
-    # Buscar el usuario por email
+    db = SessionLocal()
     usuario = db.query(Usuario).filter(Usuario.email == datos.email).first() # SELECT * FROM Usuario WHERE email = datos.email LIMIT 1
+
     if not usuario:
         db.close()
         log_warning(f"Login fallido: no existe ningun usuario con el email {datos.email}")
         raise HTTPException(status_code=401, detail="Email incorrecto")
-
+    
     # Verificar la contrasena
     if not verificar_contrasena(datos.contrasena, usuario.contrasena):
         db.close()
@@ -82,8 +82,15 @@ def login(datos: UsuarioLogin):
 
     db.close()
 
+    # El usuario tiene una casilla de seleccion de recordar, si la selecciona, el token JWT va a persistir 30 dias en localStorage de su navegador, si no, solo 4 horas
+    if datos.recordar:
+        minutos = 60 * 24 * 30  # 30 dias
+    else:
+        minutos = 60 * 4        # 4 horas
+
     # Crear y devolver el token JWT
-    token = crear_token({"id": usuario.id})
+    token = crear_token({"id": usuario.id}, minutos)
+
     return {"access_token": token, "token_type": "bearer"}
 
 

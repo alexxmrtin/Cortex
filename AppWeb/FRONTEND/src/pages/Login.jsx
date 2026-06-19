@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Login.module.css';
-import apiClient from '../services/api';
+import apiClient, { guardarToken } from '../services/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+  const [recordar, setRecordar] = useState(false);
+
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -26,10 +27,12 @@ export default function Login() {
     try {
       const respuesta = await apiClient.post('/usuarios/login', {
         email: email,
-        contrasena: password
+        contrasena: password,
+        recordar: recordar
       });
 
-      localStorage.setItem('authToken', respuesta.data.access_token); //Guarda el token JWT al iniciar sesion en localStorage del navegador
+      // Segun "recordarme": localStorage (persiste) o sessionStorage (se borra al cerrar el navegador)
+      guardarToken(respuesta.data.access_token, recordar);
       navigate('/');
 
     } catch(err) {
@@ -72,6 +75,15 @@ export default function Login() {
               onChange={handlePasswordChange}
             />
           </div>
+
+          <label className={styles.recordar}>
+            <input
+              type="checkbox"
+              checked={recordar}
+              onChange={(e) => setRecordar(e.target.checked)}
+            />
+            Recordarme en este dispositivo
+          </label>
 
           {error && <p className={styles.error}>{error}</p>}
 

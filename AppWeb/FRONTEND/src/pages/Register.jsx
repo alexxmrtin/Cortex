@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 import styles from '../styles/Login.module.css';
-import apiClient from '../services/api'
+import apiClient, { guardarToken } from '../services/api'
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -49,7 +49,8 @@ export default function Register() {
         email: correo,
         contrasena: password
       });
-      localStorage.setItem('authToken', login.data.access_token);
+      // Tras registrarse iniciamos sesion normal (sin "recordarme"): se guarda en sessionStorage
+      guardarToken(login.data.access_token, false);
       navigate('/');
     }
     catch (err){

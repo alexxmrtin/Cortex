@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from '../styles/Home.module.css';
 import perfilNoDefinido from '../assets/perfilNoDefinido.jpg';
-import apiClient, { API_BASE_URL } from '../services/api';
+import apiClient, { API_BASE_URL, obtenerToken, borrarToken } from '../services/api';
 import Calendar from '../components/Calendar';
 import SelectorModelo from '../components/SelectorModelo';
 
@@ -95,7 +95,7 @@ function ListaServiciosActivos(servicios) {
 }
 
 export default function Home() {
-  const token = localStorage.getItem('authToken');
+  const token = obtenerToken();
   const navigate = useNavigate();
 
   const [usuario, setUsuario] = useState(null);
@@ -141,7 +141,7 @@ export default function Home() {
   }, []);
 
   function cerrarSesion(){
-    localStorage.removeItem('authToken');
+    borrarToken();
     window.location.href = '/';
   }
 

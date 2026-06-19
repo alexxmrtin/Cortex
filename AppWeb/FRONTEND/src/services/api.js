@@ -13,12 +13,45 @@ const apiClient = axios.create({
 });
 
 
+
+// --- Manejo del token segun el "recordarme" del login ---
+// Si el usuario marca "recordarme", guardamos el token en localStorage (sobrevive a cerrar el navegador).
+// Si no lo marca, lo guardamos en sessionStorage (se borra al cerrar la pestaña/navegador).
+// Centralizamos aqui leer/guardar/borrar para que el resto de la app no tenga que saber en cual de los dos esta.
+
+// Guarda el token en el almacen que corresponda segun 'recordar'. Limpia el otro para no dejar tokens duplicados.
+export function guardarToken(token, recordar) {
+  if (recordar) {
+    localStorage.setItem('authToken', token);
+    sessionStorage.removeItem('authToken');
+  } else {
+    sessionStorage.setItem('authToken', token);
+    localStorage.removeItem('authToken');
+  }
+}
+
+
+
+// Devuelve el token este donde este (localStorage o sessionStorage), o null si no hay sesion.
+export function obtenerToken() {
+  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+}
+
+// Borra el token de los dos almacenes (cerrar sesion / eliminar cuenta).
+export function borrarToken() {
+  localStorage.removeItem('authToken');
+  sessionStorage.removeItem('authToken');
+}
+
+
+
+
 // Este es un middleware del frontend, se ejecuta automaticamente antes de cada peticion que hagas con la instancia "apiCLient" creada anteriormente.
-//Lo que hace es mirar en el navegador si hay un token en localStorage, si existe lo añade al header "Authorization: Bearer <token>" y la devuelve con ese parametro modificado 
+//Lo que hace es mirar en el navegador si hay un token, si existe lo añade al header "Authorization: Bearer <token>" y la devuelve con ese parametro modificado
 apiClient.interceptors.request.use(
 
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = obtenerToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
