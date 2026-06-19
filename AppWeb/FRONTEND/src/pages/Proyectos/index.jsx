@@ -16,7 +16,7 @@ export default function Projects() {
   const [proyectos, setProyectos] = useState([]);
   const [usuario, setUsuario] = useState(null);
   const [panelAbierto, setPanelAbierto] = useState(false);        // controla si el panel de IA esta abierto
-  const [conversacionIaId, setConversacionIaId] = useState(null); // id de la conversacion del panel para este proyecto (null si aun no existe)
+  const [conversacionesIds, setConversacionesIds] = useState([]); // ids de TODAS las conversaciones asociadas a este proyecto (vacio si aun no hay ninguna)
 
   const { id } = useParams(); //useParams lee el :id de la URL actual y la guarda en la variable, lo usamos para construir los links dinamicos de cada proyecto y asignar un estilo diferente al proyecto seleccionado
   const navigate = useNavigate();
@@ -50,32 +50,31 @@ export default function Projects() {
 
   //---------------------------------------------------------------------------------------------------------------
 
-  // Al cambiar de proyecto, buscamos si ya existe la conversacion del panel de IA para ese proyecto.
-  // Si existe, guardamos su id para que el panel cargue el historial; si no, queda null y se creara al primer mensaje.
+  // Al cambiar de proyecto, recogemos las ids de TODAS las conversaciones asociadas a ese proyecto.
+  // Un proyecto puede tener varias, asi que guardamos un array (vacio si aun no hay ninguna).
   useEffect(function () {
     if (!id) {
       return;
     }
 
-    async function buscarConversacion() {
+    async function buscarConversaciones() {
       try {
         const respuesta = await apiClient.get('/conversaciones/');
 
-        // Buscamos la conversacion del panel de este proyecto; si no hay, queda en null
-        let encontradaId = null;
+        // Recogemos las ids de todas las conversaciones de este proyecto
+        const ids = [];
         for (let i = 0; i < respuesta.data.length; i++) {
           const conv = respuesta.data[i];
-          if (conv.proyecto_id === Number(id) && conv.titulo.startsWith(TITULO_PANEL_IA)) {
-            encontradaId = conv.id;
-            break;
+          if (conv.proyecto_id === Number(id)) {
+            ids.push(conv.id);
           }
         }
-        setConversacionIaId(encontradaId); // setState tras el await: no es sincrono dentro del efecto
+        setConversacionesIds(ids); // setState tras el await: no es sincrono dentro del efecto
       } catch (err) {
-        console.error('Error al buscar la conversacion del proyecto', err);
+        console.error('Error al buscar las conversaciones del proyecto', err);
       }
     }
-    buscarConversacion();
+    buscarConversaciones();
   }, [id]);
 
 
@@ -87,6 +86,13 @@ export default function Projects() {
       proyecto_id: Number(id),
     });
     return respuesta.data.id;
+  }
+
+  // Cuando el panel crea una conversacion nueva, la añadimos al array de ids de este proyecto.
+  function agregarConversacionId(nuevoId) {
+    setConversacionesIds(function (anteriores) {
+      return [...anteriores, nuevoId];
+    });
   }
 
   // Actualiza en el estado local el modelo de IA cuando el usuario lo cambia en el selector.
@@ -294,9 +300,9 @@ export default function Projects() {
           {/*onConversacionCreada es un callback, le estamos pasando el setter del estado ConversacionIAId, es decir, el componente cuando use onConversacionCreada(id), estara seteando el estado ConversacionIAId de esta pagina */}
           <PanelConversacionIA
             key={id}
-            conversacionId={conversacionIaId}
+            conversacionesIds={conversacionesIds}
             crearConversacion={crearConversacionProyecto}
-            onConversacionCreada={setConversacionIaId}
+            onConversacionCreada={agregarConversacionId}
             placeholder='Pregunta sobre el proyecto...'
           />
         </aside>

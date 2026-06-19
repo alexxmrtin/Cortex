@@ -9,21 +9,33 @@ import apiClient from '../services/api';
 
 // Props (contrato del componente):
 
-//- conversacionId:     id de la conversacion a mostrar. Puede ser null si todavia no exista (por ejemplo, un chat nuevo que aun no ha enviado ningun mensaje).
+//- conversacionesIds:  array con las ids de las conversaciones asociadas al contexto (p. ej. un proyecto). Puede venir vacio ([]) si todavia no existe ninguna.
 
-//-crearConversacion:  funcion async que devuelve el id de una conversacion nueva. La llamamos de forma perezosa al enviar el PRIMER mensaje cuando conversacionId es null.Aqui es donde cada pantalla mete su logica propia (titulo, proyecto_id, etc.).
+//-crearConversacion:  funcion async que devuelve el id de una conversacion nueva. La llamamos de forma perezosa al enviar el PRIMER mensaje cuando no hay ninguna conversacion seleccionada.Aqui es donde cada pantalla mete su logica propia (titulo, proyecto_id, etc.).
 //Necesitamos esto porque este componente se va a utilizar para diferentes cosas, necesita una funcion del componente padre que cree la conversacion y le pase los datos necesarios a la conversacion como proyectoID o tareasID.
 
 //- onConversacionCreada: (opcional) callback que avisa al padre del id recien creado, por si lo necesita.
 
 //- placeholder:        (opcional) texto del input.
 
-export default function PanelConversacionIA({ conversacionId, crearConversacion, onConversacionCreada, placeholder }) {
+export default function PanelConversacionIA({ conversacionesIds, crearConversacion, onConversacionCreada, placeholder }) {
+
+  // Conversacion que el usuario ha elegido en el selector. null = no ha elegido, usamos la primera por defecto.
+  const [seleccionUsuario, setSeleccionUsuario] = useState(null);
+
+  // Controla si el desplegable con la lista de conversaciones esta abierto.
+  const [mostrarPanel, setMostrarPanel] = useState(false);
+
+  // Conversacion que se muestra ahora mismo: la que el usuario eligio, o la primera de la lista si no eligio ninguna.Lo calculamos en cada render (no es estado) para no tener que sincronizar con un efecto.
+  let conversacionSeleccionada = seleccionUsuario;
+  if (conversacionSeleccionada === null && conversacionesIds.length > 0) {
+    conversacionSeleccionada = conversacionesIds[0];
+  }
 
   // Guardamos el id en un estado interno propio porque puede cambiar de dos formas:
-  //   1. El padre nos pasa un conversacionId distinto (cambio de contexto).
-  //   2. Lo creamos nosotros al vuelo en el primer mensaje.
-  const [idActual, setIdActual] = useState(conversacionId);
+  //   1. Cambia la conversacion seleccionada (el padre o el usuario eligen otra).
+  //   2. La creamos nosotros al vuelo en el primer mensaje.
+  const [idActual, setIdActual] = useState(null);
 
   const [mensajes, setMensajes] = useState([]);    // [{ rol: 'usuario' | 'ia', texto: '...' }] texto que le vamos a pasar al modelo
   const [input, setInput] = useState('');          // texto que escribe el usuario
@@ -34,27 +46,24 @@ export default function PanelConversacionIA({ conversacionId, crearConversacion,
   const mensajesEndRef = useRef(null);
 
 
-  // Cuando el padre nos pasa un conversacionId distinto, sincronizamos nuestro id interno
-  // y cargamos los mensajes de esa conversacion. Si es null, dejamos el chat en blanco.
-  // Todo va dentro de la funcion async para no llamar a setState de forma sincrona en el efecto
-  // (eslint lo prohibe porque provoca renders en cascada).
+  // Cuando cambia la conversacion seleccionada (el padre nos pasa otra lista, o llega la lista por primera vez),sincronizamos nuestro id interno y cargamos sus mensajes. Si no hay ninguna, dejamos el chat en blanco.Todo va dentro de la funcion async para no llamar a setState de forma sincrona en el efecto(eslint lo prohibe porque provoca renders en cascada).
   useEffect(function () {
     let cancelado = false; // bandera para ignorar la respuesta si el efecto se rehace antes de terminar
 
     async function cargarConversacion() {
       // Sin conversacion (todavia no creada): dejamos el chat en blanco
-      if (!conversacionId) {
+      if (!conversacionSeleccionada) {
         setIdActual(null);
         setMensajes([]);
         return;
       }
 
       try {
-        const respuesta = await apiClient.get('/mensajes/conversacion/' + conversacionId);
+        const respuesta = await apiClient.get('/mensajes/conversacion/' + conversacionSeleccionada);
         if (cancelado) {
           return;
         }
-        setIdActual(conversacionId);
+        setIdActual(conversacionSeleccionada);
         setMensajes(respuesta.data.map(function (m) {
           return { rol: m.rol, texto: m.contenido };
         }));
@@ -65,11 +74,11 @@ export default function PanelConversacionIA({ conversacionId, crearConversacion,
 
     cargarConversacion();
 
-    // Limpieza: si conversacionId cambia (o se desmonta) antes de terminar, ignoramos la respuesta
+    // Limpieza: si la conversacion seleccionada cambia (o se desmonta) antes de terminar, ignoramos la respuesta
     return function () {
       cancelado = true;
     };
-  }, [conversacionId]);
+  }, [conversacionSeleccionada]);
 
 
   // Cada vez que cambia la lista de mensajes, bajamos el scroll al fondo
@@ -114,8 +123,7 @@ export default function PanelConversacionIA({ conversacionId, crearConversacion,
       const respuesta = await apiClient.post('/mensajes/conversacion/' + id + '/chat', { contenido: texto });
       setMensajes(function (prev) { return [...prev, { rol: 'ia', texto: respuesta.data.contenido }]; });
 
-      // Avisamos al padre del id SOLO ahora que el servidor ya tiene los mensajes guardados.
-      // (Si lo hicieramos antes, el efecto recargaria una conversacion vacia y borraria el mensaje optimista.)
+      // Avisamos al padre del id SOLO ahora que el servidor ya tiene los mensajes guardados.(Si lo hicieramos antes, el efecto recargaria una conversacion vacia y borraria el mensaje optimista.)
       if (recienCreada && onConversacionCreada) {
         onConversacionCreada(id);
       }
@@ -138,6 +146,47 @@ export default function PanelConversacionIA({ conversacionId, crearConversacion,
     }
   }
 
+
+
+  // Abre o cierra el desplegable de conversaciones
+  function alternarPanel() {
+    if (mostrarPanel) {
+      setMostrarPanel(false);
+    } else {
+      setMostrarPanel(true);
+    }
+  }
+
+  // El usuario elige una conversacion del desplegable: la guardamos como su seleccion (el efecto de carga la renderiza) y cerramos el panel
+  function seleccionarConversacion(idConversacion) {
+    setSeleccionUsuario(idConversacion);
+    setMostrarPanel(false);
+    setError('');
+  }
+
+
+  // Preparamos la lista de conversaciones del desplegable. Como por ahora solo tenemos sus ids, las etiquetamos por posicion ("Conversacion 1", "Conversacion 2"...). La activa se resalta.
+  let itemsConversaciones;
+  if (conversacionesIds.length > 0) {
+    itemsConversaciones = conversacionesIds.map(function (idConversacion, i) {
+      let claseItem = styles.itemConversacion;
+      if (idConversacion === conversacionSeleccionada) {
+        claseItem = claseItem + ' ' + styles.itemConversacionActivo;
+      }
+      return (
+        <button
+          key={idConversacion}
+          type="button"
+          className={claseItem}
+          onClick={function () { seleccionarConversacion(idConversacion); }}
+        >
+          Conversación {i + 1}
+        </button>
+      );
+    });
+  } else {
+    itemsConversaciones = <p className={styles.listaVacia}>No hay conversaciones todavía</p>;
+  }
 
 
   // Preparamos la lista de mensajes a renderizar. Segun el rol aplicamos un estilo u otro.
@@ -213,6 +262,21 @@ export default function PanelConversacionIA({ conversacionId, crearConversacion,
       </div>
 
       {error && <p className={styles.errorMensaje}>{error}</p>}
+
+      {/* Selector de conversaciones: boton encima del formulario que despliega la lista hacia arriba */}
+      <div className={styles.selectorConversaciones}>
+        {mostrarPanel && (
+          <div className={styles.listaConversaciones}>
+            {itemsConversaciones}
+          </div>
+        )}
+        <button type="button" className={styles.toggleConversaciones} onClick={alternarPanel}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Conversaciones ({conversacionesIds.length})
+        </button>
+      </div>
 
       <form className={styles.inputArea} onSubmit={enviarMensaje}>
         <input

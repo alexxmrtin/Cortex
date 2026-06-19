@@ -1,56 +1,67 @@
 services:
   backend:
     build: ./AppWeb/BACKEND
+
     ports:
       - "8000:8000"
+
     env_file:
       - ./AppWeb/BACKEND/.env
+
     environment:
-      # Sobreescribe DATABASE_URL del .env: guarda la BD DENTRO del volumen
-      # cortex_db (carpeta /app/data) para que NO se borre al reconstruir.
-      # Son 4 barras porque es una ruta absoluta: sqlite:/// + /app/data/...
-      - DATABASE_URL=sqlite:////app/data/cortex.db
-      # Sobreescribe REDIS_URL del .env: dentro de Docker el host NO es localhost,
-      # sino el nombre del servicio (redis), resuelto por la red interna de compose.
-      - REDIS_URL=redis://redis:6379/0
+
+      - DATABASE_URL=postgresql+psycopg2://cortex:cortex@db:5432/cortex # Sobreescribe DATABASE_URL del .env: dentro de Docker la BD vive en el servicio 'db' (Postgres), resuelto por la red interna de compose. Formato: postgresql+psycopg2://usuario:password@host:puerto/basededatos
+
+      - REDIS_URL=redis://redis:6379/0 # Sobreescribe REDIS_URL del .env: dentro de Docker el host NO es localhost,sino el nombre del servicio (redis), resuelto por la red interna de compose.
+
     volumes:
       - ./AppWeb/BACKEND/Storage:/app/Storage
       - ./AppWeb/BACKEND/Logs:/app/Logs
       - ./AppWeb/BACKEND/Cache:/app/Cache
-      - cortex_db:/app/data        # cajón persistente donde vive cortex.db
+
     depends_on:
-      - redis
+      # service_healthy: el backend NO arranca hasta que Postgres acepte conexiones (ver healthcheck del servicio db).
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+
+  # Base de datos PostgreSQL. Los datos viven en el volumen pg_data para que persistan entre reconstrucciones.
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: cortex
+      POSTGRES_PASSWORD: cortex
+      POSTGRES_DB: cortex
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # El healthcheck comprueba que Postgres esta listo para aceptar conexiones antes de que arranque el backend.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cortex -d cortex"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 
   # Servidor Redis: cache en memoria.
   redis:
     image: redis:7-alpine
     volumes:
-      - redis_data:/data        # persiste los datos para que el contador sobreviva a reinicios
+      - redis_data:/data # persiste los datos para que el contador sobreviva a reinicios
+
 
   frontend:
     build:
       context: ./AppWeb/FRONTEND
       args:
-        # Se inyecta en el build para que VITE_API_URL quede congelado en el
-        # frontend compilado (sin esto quedaria "undefined" y romperia las
-        # imagenes servidas desde /storage del backend).
+        # Se inyecta en el build para que VITE_API_URL quede congelado en el frontend compilado (sin esto quedaria "undefined" y romperia las imagenes servidas desde /storage del backend).
         VITE_API_URL: http://localhost:8000
     ports:
       - "5173:80"
     depends_on:
       - backend
 
-  # Opcional, cuando migres de SQLite:
-  # db:
-  #   image: postgres:16
-  #   environment:
-  #     POSTGRES_USER: cortex
-  #     POSTGRES_PASSWORD: cortex
-  #     POSTGRES_DB: cortex
-  #   volumes:
-  #     - pg_data:/var/lib/postgresql/data
-
 volumes:
-  cortex_db:
+  pg_data:
   redis_data:
-  # pg_data:

@@ -1,6 +1,7 @@
 fastapi==0.115.5 #Framework
 uvicorn[standard]==0.32.1 #Servidor que ejecuta FastAPI
 sqlalchemy==2.0.36 #ORM para hablar con la base de datos
+psycopg2-binary==2.9.10 #Driver para que SQLAlchemy pueda hablar con PostgreSQL
 python-jose[cryptography]==3.3.0 #Crear y validar tokens JWT
 passlib[bcrypt]==1.7.4 #Hashear contraseñas
 bcrypt==4.0.1 #Version especifica por incompatibilidad con passlib en versiones superiores
