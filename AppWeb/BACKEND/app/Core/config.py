@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str
     GROQ_API_KEY: str
     REDIS_URL: str  #redis es un miniservidor que creas en tu aplicacion con una base de datos noSQL, actualmente usa por defecto a el puerto 6379 del mismo host y el backend lo usa por ese puerto
+    ENCRYPTION_KEY: str  # Clave Fernet (base64) para cifrar/descifrar credenciales SSH en la BD. Es un secreto: vive en el .env, nunca en el repo.
     # Carpeta raiz donde se guardan los archivos en disco: STORAGE_BASE/{usuario_id}/{proyecto_id}/
     # Lleva valor por defecto (no es un secreto, es una ruta) para que la app arranque aunque no este en el .env.
     STORAGE_BASE: str = "Storage/ArchivosUsuarios"

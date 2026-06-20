@@ -14,6 +14,15 @@ class Servicio(Base):
     proyectoAsociado = Column(Integer, ForeignKey("Proyecto.id"), nullable=True)
     host = Column(String, default="localhost", nullable=False)  # direccion donde corre el servicio , por default sera localhost
     puerto = Column(Integer, nullable=False)
+
+
+    # --- Datos de acceso SSH para encender/apagar el servicio en la maquina remota ---
+    puertoSSH = Column(Integer, default=22, nullable=True)   # puerto SSH, por defecto el 22
+    usuarioSSH = Column(String, nullable=True)    # usuario con el que se abre la sesion SSH (ej: "root")
+    clavePrivadaCifrada = Column(Text, nullable=True)# La clave privada SSH se guarda SIEMPRE cifrada (Fernet), nunca en claro. Se descifra solo en el momento de conectar.
+    passphraseCifrada = Column(Text, nullable=True) # Passphrase de la clave privada, tambien cifrada. Opcional porque no todas las claves llevan passphrase.
+
+
     fechaCreacion = Column(DateTime, default=func.now())
     usuario_id = Column(Integer, ForeignKey("Usuario.id"), nullable=False)
 
