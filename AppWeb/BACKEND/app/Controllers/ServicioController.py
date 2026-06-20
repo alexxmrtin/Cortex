@@ -1,13 +1,16 @@
 import socket
+import json
 from fastapi import APIRouter, HTTPException, Header
 from app.Core.database import SessionLocal
 from app.Models.Servicio import Servicio
-from app.Schemas.ServicioSchema import ServicioCrear, ServicioRespuesta, ServicioActualizar
+from app.Schemas.ServicioSchema import ServicioCrear, ServicioRespuesta, ServicioActualizar, MetricasServicio
 from app.Core.security import get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
 from app.Helpers.Cifrado import cifrar
+from app.Helpers.Cache import obtener_cache, guardar_cache
 from app.Helpers.Log import log_error,log_warning,log_info
 from app.Services.SSHService import ejecutar_comando
+from app.Services.MonitorService import obtener_metricas
 
 router = APIRouter()
 
@@ -181,6 +184,38 @@ def ping_servicio(servicio_id: int, authorization: str = Header(...)):
 
     return {"vivo": vivo}
 
+
+# Segundos que cacheamos las metricas en Redis. Abrir SSH es caro, asi que llamadas seguidas
+# (varias pestañas, refrescos rapidos) reutilizan la ultima muestra en vez de reconectar.
+TTL_METRICAS = 10
+
+# Devuelve las metricas del servicio: latencia (ms), CPU, RAM, disco y carga.
+# Se cachea el resultado en Redis durante TTL_METRICAS segundos.
+@router.get("/{servicio_id}/metricas", response_model=MetricasServicio)
+def metricas_servicio(servicio_id: int, authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+
+    db = SessionLocal()
+    servicio = db.query(Servicio).filter(Servicio.id == servicio_id, Servicio.usuario_id == usuario.id).first()
+    db.close()
+
+    if not servicio:
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+
+    # 1. Intentamos servir desde cache (evita abrir SSH si hay una muestra reciente).
+    clave_cache = f"metricas:{servicio_id}"
+    cacheado = obtener_cache(clave_cache)
+    if cacheado is not None:
+        return json.loads(cacheado)
+
+    # 2. No hay cache: medimos de verdad (esto abre la conexion SSH).
+    metricas = obtener_metricas(servicio)
+
+    # 3. Guardamos en cache para las proximas llamadas. Si Redis esta caido, guardar_cache
+    #    devuelve False sin romper nada: simplemente no habria cache.
+    guardar_cache(clave_cache, json.dumps(metricas), TTL_METRICAS)
+
+    return metricas
 
 
 # Estructura que recibe: solo el token JWT en el header Authorization

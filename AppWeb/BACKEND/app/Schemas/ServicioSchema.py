@@ -41,6 +41,22 @@ class ServicioRespuesta(BaseModel):
 
     model_config = {"from_attributes": True}
 
+# Metricas de monitorizacion de un servicio. Cualquier campo puede ser None si no se pudo
+# obtener (sin SSH, maquina caida, comando fallido...). 'sshOk' indica si las metricas de la
+# maquina (CPU/RAM/disco/carga) se leyeron bien; la latencia se mide aparte y puede venir sola.
+class MetricasServicio(BaseModel):
+    latenciaMs: float | None
+    cpuPorcentaje: float | None
+    ramTotalMb: int | None
+    ramUsadaMb: int | None
+    ramPorcentaje: float | None
+    discoPorcentaje: int | None
+    carga1: float | None
+    carga5: float | None
+    carga15: float | None
+    sshOk: bool
+    error: str | None
+
 # Datos que se pueden modificar
 class ServicioActualizar(BaseModel):
     nombre: str | None = None
