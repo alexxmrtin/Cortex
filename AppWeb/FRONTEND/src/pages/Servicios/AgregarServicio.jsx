@@ -15,6 +15,14 @@ export default function AgregarServicio() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
+  // --- Acceso SSH (opcional): credenciales y comandos para encender/apagar el servicio ---
+  const [usuarioSSH, setUsuarioSSH] = useState('');
+  const [puertoSSH, setPuertoSSH] = useState('22');
+  const [clavePrivada, setClavePrivada] = useState('');
+  const [passphrase, setPassphrase] = useState('');
+  const [comandoArranque, setComandoArranque] = useState('');
+  const [comandoParada, setComandoParada] = useState('');
+
   //Estos son estados que controlan el buscador de proyectos en el formulario
   const [proyectos, setProyectos] = useState([]); //Lista de proyectos del usuario cargada desde la API
   const [busqueda, setBusqueda] = useState(''); //Contiene el texto qeu escribe el usuario en el input
@@ -87,14 +95,27 @@ export default function AgregarServicio() {
     setCargando(true);
     setError('');
 
+    // Para los campos SSH opcionales mandamos null cuando estan vacios, en vez de cadenas vacias.
+    let proyectoId = null;
+    if (proyectoSeleccionado) {
+      proyectoId = proyectoSeleccionado.id;
+    }
+
     try {
       const respuesta = await apiClient.post('/servicios/', {
         nombre: nombre,
         tipo: tipo,
         host: host,
         puerto: Number(puerto),
-        proyectoAsociado: proyectoSeleccionado ? proyectoSeleccionado.id : null,
-        descripcion: descripcion
+        proyectoAsociado: proyectoId,
+        descripcion: descripcion,
+        // Acceso SSH (todo opcional)
+        puertoSSH: Number(puertoSSH) || 22,
+        usuarioSSH: usuarioSSH || null,
+        clavePrivada: clavePrivada || null,
+        passphrase: passphrase || null,
+        comandoArranque: comandoArranque || null,
+        comandoParada: comandoParada || null
       });
       navigate('/servicios/' + respuesta.data.id);
     } catch (err) {
@@ -219,6 +240,81 @@ export default function AgregarServicio() {
             </div>
           </div>
           {/*Fin del bloque de buscador de proyecto */}
+
+          {/*Bloque de acceso SSH: es opcional, solo hace falta si quieres encender/apagar el servicio en remoto */}
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="usuarioSSH">Usuario SSH <span style={{ fontWeight: 400, color: 'var(--c-muted)' }}>(opcional)</span></label>
+            <input
+              id="usuarioSSH"
+              type="text"
+              className={styles.input}
+              placeholder="root"
+              value={usuarioSSH}
+              onChange={function (e) { setUsuarioSSH(e.target.value); }}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="clavePrivada">Clave privada SSH <span style={{ fontWeight: 400, color: 'var(--c-muted)' }}>(se guarda cifrada)</span></label>
+            <textarea
+              id="clavePrivada"
+              className={styles.input}
+              placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
+              value={clavePrivada}
+              onChange={function (e) { setClavePrivada(e.target.value); }}
+              rows={4}
+              style={{ resize: 'vertical', fontFamily: 'monospace' }}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="passphrase">Passphrase de la clave <span style={{ fontWeight: 400, color: 'var(--c-muted)' }}>(opcional)</span></label>
+            <input
+              id="passphrase"
+              type="password"
+              className={styles.input}
+              placeholder="Solo si tu clave tiene passphrase"
+              value={passphrase}
+              onChange={function (e) { setPassphrase(e.target.value); }}
+            />
+          </div>
+          
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="puertoSSH">Puerto SSH</label>
+            <input
+              id="puertoSSH"
+              type="number"
+              className={styles.input}
+              placeholder="22"
+              value={puertoSSH}
+              onChange={function (e) { setPuertoSSH(e.target.value); }}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="comandoArranque">Comando de arranque</label>
+            <input
+              id="comandoArranque"
+              type="text"
+              className={styles.input}
+              placeholder="systemctl start nginx"
+              value={comandoArranque}
+              onChange={function (e) { setComandoArranque(e.target.value); }}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="comandoParada">Comando de parada</label>
+            <input
+              id="comandoParada"
+              type="text"
+              className={styles.input}
+              placeholder="systemctl stop nginx"
+              value={comandoParada}
+              onChange={function (e) { setComandoParada(e.target.value); }}
+            />
+          </div>
+          {/*Fin del bloque de acceso SSH */}
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="descripcion">Descripción</label>

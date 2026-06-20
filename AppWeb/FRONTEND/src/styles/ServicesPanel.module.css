@@ -135,6 +135,69 @@
   width: fit-content;
 }
 
+/* ── Control remoto por SSH ── */
+.controlSSH {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 1.2rem;
+  border-top: 2px solid var(--c-divider);
+}
+
+.botonesSSH {
+  display: flex;
+  gap: 0.8rem;
+}
+
+/* Botones de encender/apagar. Los colores de accion se mantienen literales en ambos temas. */
+.botonEncender,
+.botonApagar {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1.4rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.botonEncender {
+  background: #22a55a;
+}
+
+.botonApagar {
+  background: #e03e3e;
+}
+
+.botonEncender:hover,
+.botonApagar:hover {
+  opacity: 0.88;
+}
+
+/* Botones deshabilitados (no hay comando configurado o hay una accion en curso) */
+.botonEncender:disabled,
+.botonApagar:disabled {
+  background: var(--c-border);
+  color: var(--c-muted);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* Mensajes de feedback tras encender/apagar (colores literales para conservar contraste) */
+.mensajeOk {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #22a55a;
+}
+
+.mensajeError {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e03e3e;
+}
+
 /* ── Descripción ── */
 .descripcionBloque {
   display: flex;

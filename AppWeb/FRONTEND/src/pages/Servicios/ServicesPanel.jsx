@@ -11,6 +11,11 @@ export default function ServicesPanel() {
   const [vivo, setVivo] = useState(null); // null = comprobando, true = responde, false = no responde (Saber si un servicio esta activo, la API devuelve true o false)
   const [cargando, setCargando] = useState(true);
 
+  // Estado del control remoto por SSH
+  const [accionando, setAccionando] = useState(false); // true mientras se ejecuta un encender/apagar
+  const [mensajeAccion, setMensajeAccion] = useState(''); // texto de feedback tras la accion
+  const [tipoMensaje, setTipoMensaje] = useState(''); // 'ok' o 'error', para pintar el mensaje
+
   useEffect(function() {
     async function cargarDatos() {
       try {
@@ -45,15 +50,33 @@ export default function ServicesPanel() {
     cargarDatos();
   }, [id]);
 
-  // Alterna el estado entre 'activo' e 'inactivo' en la base de datos
-  async function toggleEstado() {
+  // Enciende o apaga el servicio ejecutando el comando por SSH en la maquina remota.
+  // 'accion' es 'encender' o 'apagar'; 'nuevoEstado' es como queda el servicio si va bien.
+  async function ejecutarAccionSSH(accion, nuevoEstado) {
+    setAccionando(true);
+    setMensajeAccion('');
+
     try {
-      const nuevoEstado = servicio.estado === 'activo' ? 'inactivo' : 'activo';
-      const respuesta = await apiClient.patch('/servicios/' + id, { estado: nuevoEstado });
-      setServicio(respuesta.data);
+      await apiClient.post('/servicios/' + id + '/' + accion);
+      // El endpoint no devuelve el servicio entero, asi que actualizamos el estado en local.
+      setServicio({ ...servicio, estado: nuevoEstado });
+      setMensajeAccion('Servicio ' + nuevoEstado + ' correctamente');
+      setTipoMensaje('ok');
     } catch (err) {
-      console.error('Error al cambiar el estado del servicio', err);
+      console.error('Error al ' + accion + ' el servicio', err);
+      setMensajeAccion(err.response?.data?.detail || 'No se pudo ' + accion + ' el servicio');
+      setTipoMensaje('error');
+    } finally {
+      setAccionando(false);
     }
+  }
+
+  function encender() {
+    ejecutarAccionSSH('encender', 'activo');
+  }
+
+  function apagar() {
+    ejecutarAccionSSH('apagar', 'inactivo');
   }
 
   if (cargando) {
@@ -65,13 +88,10 @@ export default function ServicesPanel() {
   }
 
   
-  let claseEstado;
   let textoEstado;
   if (servicio.estado === 'activo') {
-    claseEstado = styles.estadoActivo;
     textoEstado = 'Activo';
   } else {
-    claseEstado = styles.estadoInactivo;
     textoEstado = 'Inactivo';
   }
 
@@ -94,6 +114,28 @@ export default function ServicesPanel() {
     textoPing = 'No responde';
   }
 
+  // ── Control remoto por SSH ──
+  // Texto que indica si el servicio tiene clave SSH guardada (no recibimos la clave, solo el flag)
+  let textoClaveSSH;
+  if (servicio.tieneClaveSSH) {
+    textoClaveSSH = 'Configurada';
+  } else {
+    textoClaveSSH = 'No configurada';
+  }
+
+  // Clase del mensaje de feedback segun haya ido bien o mal la accion
+  let claseMensaje;
+  if (tipoMensaje === 'ok') {
+    claseMensaje = styles.mensajeOk;
+  } else {
+    claseMensaje = styles.mensajeError;
+  }
+
+  // Los botones solo tienen sentido si existe el comando correspondiente. Se deshabilitan
+  // tambien mientras hay una accion en curso para no lanzar dos a la vez.
+  const puedeEncender = !accionando && Boolean(servicio.comandoArranque);
+  const puedeApagar = !accionando && Boolean(servicio.comandoParada);
+
   return (
     <div className={styles.panel}>
 
@@ -102,13 +144,7 @@ export default function ServicesPanel() {
           <h2 className={styles.titulo}>{servicio.nombre}</h2>
           <span className={styles.subtitulo}>{servicio.tipo}</span>
         </div>
-        <button className={claseEstado} onClick={toggleEstado}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '5px'}}>
-            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-            <line x1="12" y1="2" x2="12" y2="12"/>
-          </svg>
-          {textoEstado}
-        </button>
+        <span className={claseEstadoBadge}>{textoEstado}</span>
       </div>
 
       <div className={styles.infoGrid}>
@@ -139,6 +175,33 @@ export default function ServicesPanel() {
           <span className={styles.infoLabel}>Conectividad</span>
           <span className={styles.infoValor}>{textoPing}</span>
         </div>
+        <div className={styles.infoItem}>
+          <span className={styles.infoLabel}>Usuario SSH</span>
+          <span className={styles.infoValor}>{servicio.usuarioSSH || '—'}</span>
+        </div>
+        <div className={styles.infoItem}>
+          <span className={styles.infoLabel}>Puerto SSH</span>
+          <span className={styles.infoValor}>{servicio.puertoSSH || '—'}</span>
+        </div>
+        <div className={styles.infoItem}>
+          <span className={styles.infoLabel}>Clave SSH</span>
+          <span className={styles.infoValor}>{textoClaveSSH}</span>
+        </div>
+      </div>
+
+      {/*Seccion de control remoto: enciende/apaga el servicio por SSH */}
+      <div className={styles.controlSSH}>
+        <span className={styles.infoLabel}>Control remoto (SSH)</span>
+        <div className={styles.botonesSSH}>
+          <button type="button" className={styles.botonEncender} onClick={encender} disabled={!puedeEncender}>
+            Encender
+          </button>
+          <button type="button" className={styles.botonApagar} onClick={apagar} disabled={!puedeApagar}>
+            Apagar
+          </button>
+        </div>
+        {accionando && <span className={styles.infoValor}>Ejecutando comando por SSH...</span>}
+        {mensajeAccion && <span className={claseMensaje}>{mensajeAccion}</span>}
       </div>
 
       {servicio.descripcion && (
