@@ -5,16 +5,21 @@ from app.Models.Servicio import Servicio
 from app.Schemas.ServicioSchema import ServicioCrear, ServicioRespuesta, ServicioActualizar
 from app.Core.security import get_usuario_del_token
 from app.Helpers.Sanitizar import sanitizar
-from app.Helpers.Log import log_error,log_warning
+from app.Helpers.Cifrado import cifrar
+from app.Helpers.Log import log_error,log_warning,log_info
+from app.Services.SSHService import ejecutar_comando
 
 router = APIRouter()
 
-# GET    /servicios/            → Lista todos los servicios del usuario
-# POST   /servicios/            → Crea un nuevo servicio
-# GET    /servicios/{id}        → Obtiene un servicio concreto
-# PATCH  /servicios/{id}        → Actualiza los datos del servicio
-# GET    /servicios/{id}/ping   → Hace un ping a un servicio para ver si esta activo
-# DELETE /servicios/{id}        → Elimina el servicio
+# GET    /servicios/             → Lista todos los servicios del usuario
+# POST   /servicios/             → Crea un nuevo servicio
+# GET    /servicios/{id}         → Obtiene un servicio concreto
+# PATCH  /servicios/{id}         → Actualiza los datos del servicio
+# GET    /servicios/{id}/ping    → Hace un ping a un servicio para ver si esta activo
+# DELETE /servicios/{id}         → Elimina el servicio
+# POST   /servicios/{id}/encender → Enciende el servicio ejecutando su comandoArranque por SSH
+# POST   /servicios/{id}/apagar   → Apaga el servicio ejecutando su comandoParada por SSH
+
 
 
 # Estructura que recibe: solo el token JWT en el header Authorization
@@ -50,6 +55,14 @@ def crear_servicio(datos: ServicioCrear, authorization: str = Header(...)):
         proyectoAsociado=datos.proyectoAsociado,
         host=datos.host,
         puerto=datos.puerto,
+        puertoSSH=datos.puertoSSH,
+        usuarioSSH=datos.usuarioSSH,
+        # La clave y la passphrase llegan en claro: las ciframos ANTES de guardarlas.
+        # cifrar(None) devuelve None, asi que un servicio sin clave se guarda con NULL.
+        clavePrivadaCifrada=cifrar(datos.clavePrivada),
+        passphraseCifrada=cifrar(datos.passphrase),
+        comandoArranque=datos.comandoArranque,
+        comandoParada=datos.comandoParada,
         usuario_id=usuario.id
     )
 
@@ -112,6 +125,21 @@ def actualizar_servicio(servicio_id: int, datos: ServicioActualizar, authorizati
         servicio.host = datos.host
     if datos.puerto is not None:
         servicio.puerto = datos.puerto
+    if datos.puertoSSH is not None:
+        servicio.puertoSSH = datos.puertoSSH
+    if datos.usuarioSSH is not None:
+        servicio.usuarioSSH = datos.usuarioSSH
+    if datos.comandoArranque is not None:
+        servicio.comandoArranque = datos.comandoArranque
+    if datos.comandoParada is not None:
+        servicio.comandoParada = datos.comandoParada
+
+    # Clave y passphrase: solo las tocamos si el campo VINO en la peticion (model_fields_set),
+    # para no machacar la clave guardada cada vez que se edita otra cosa. Si viene, la ciframos.
+    if "clavePrivada" in datos.model_fields_set:
+        servicio.clavePrivadaCifrada = cifrar(datos.clavePrivada)
+    if "passphrase" in datos.model_fields_set:
+        servicio.passphraseCifrada = cifrar(datos.passphrase)
 
     db.commit()
     db.refresh(servicio)
@@ -154,6 +182,7 @@ def ping_servicio(servicio_id: int, authorization: str = Header(...)):
     return {"vivo": vivo}
 
 
+
 # Estructura que recibe: solo el token JWT en el header Authorization
 @router.delete("/{servicio_id}")
 def eliminar_servicio(servicio_id: int, authorization: str = Header(...)):
@@ -171,3 +200,51 @@ def eliminar_servicio(servicio_id: int, authorization: str = Header(...)):
     db.close()
 
     return {"mensaje": "Servicio eliminado correctamente"}
+
+#--------------------------------------------------------------------------------------------
+
+# Funcion interna que comparten encender y apagar: busca el servicio, valida que tenga el comando pedido, lo ejecuta por SSH y, si fue bien, actualiza el estado en la BD. 'comando' es el texto a ejecutar; 'nuevo_estado' es como queda el servicio si todo va bien.
+def _accion_ssh(servicio_id: int, authorization: str, atributo_comando: str, nuevo_estado: str, accion: str):
+    usuario = get_usuario_del_token(authorization)
+
+    db = SessionLocal()
+    servicio = db.query(Servicio).filter(Servicio.id == servicio_id, Servicio.usuario_id == usuario.id).first()
+
+    if not servicio:
+        db.close()
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+
+    comando = getattr(servicio, atributo_comando)
+    if not comando:
+        db.close()
+        raise HTTPException(status_code=400, detail=f"El servicio no tiene un comando de {accion} configurado")
+
+    # Ejecuta el comando por SSH. Nunca lanza excepciones: devuelve un dict con el resultado.
+    resultado = ejecutar_comando(servicio, comando)
+
+    if resultado["ok"]:
+        # Solo actualizamos el estado si el comando termino con exito (exit 0).
+        servicio.estado = nuevo_estado
+        db.commit()
+        log_info(f"Usuario {usuario.id} ejecuto '{accion}' sobre el servicio {servicio.id}")
+        db.close()
+        return {"mensaje": f"Servicio {nuevo_estado}", "stdout": resultado["stdout"]}
+
+    db.close()
+    # 502 Bad Gateway: el fallo es de la maquina remota, no de nuestra API.
+    raise HTTPException(status_code=502, detail=resultado["error"])
+
+
+# Enciende el servicio ejecutando su comandoArranque por SSH. Si va bien, lo deja en 'activo'.
+@router.post("/{servicio_id}/encender")
+def encender_servicio(servicio_id: int, authorization: str = Header(...)):
+    return _accion_ssh(servicio_id, authorization, "comandoArranque", "activo", "arranque")
+
+
+# Apaga el servicio ejecutando su comandoParada por SSH. Si va bien, lo deja en 'inactivo'.
+@router.post("/{servicio_id}/apagar")
+def apagar_servicio(servicio_id: int, authorization: str = Header(...)):
+    return _accion_ssh(servicio_id, authorization, "comandoParada", "inactivo", "parada")
+
+
+#-------------------------------------------------------------------------------------------------------------------

@@ -14,6 +14,7 @@ anthropic #SDK de Anthropic para llamar a Claude
 groq #SDK de Groq para llamar a Llama
 redis==5.2.1 #Cliente de Redis para el cacheo en memoria (contadores, pings, etc.), redis es un miniservidor que creas en tu aplicacion con una base de datos noSQL
 cryptography==48.0.0 #Cifrado simetrico (Fernet) para guardar las credenciales SSH cifradas en la BD
+paramiko==5.0.0 #Cliente SSH para conectarse a las maquinas remotas y ejecutar comandos (encender/apagar servicios)
 
 #Dependencias del backend
 

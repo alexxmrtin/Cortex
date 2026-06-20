@@ -22,9 +22,19 @@ class Servicio(Base):
     clavePrivadaCifrada = Column(Text, nullable=True)# La clave privada SSH se guarda SIEMPRE cifrada (Fernet), nunca en claro. Se descifra solo en el momento de conectar.
     passphraseCifrada = Column(Text, nullable=True) # Passphrase de la clave privada, tambien cifrada. Opcional porque no todas las claves llevan passphrase.
 
+    # Comandos que se ejecutan por SSH para encender y apagar el servicio (ej: "systemctl start nginx").
+    # Son libres para soportar cualquier forma de gestion (systemctl, docker, scripts...).
+    comandoArranque = Column(Text, nullable=True)
+    comandoParada = Column(Text, nullable=True)
+
 
     fechaCreacion = Column(DateTime, default=func.now())
     usuario_id = Column(Integer, ForeignKey("Usuario.id"), nullable=False)
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="servicios")
+
+    # Esto es una propiedad calculada, es una funcion que se comporta como si fuera un atributo: indica si el servicio tiene clave SSH guardada, SIN exponer la clave en si. Se usa en ServicioRespuesta.
+    @property
+    def tieneClaveSSH(self) -> bool:
+        return self.clavePrivadaCifrada is not None

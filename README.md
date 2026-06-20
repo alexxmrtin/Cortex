@@ -12,6 +12,7 @@ Cortex te permite subir proyectos completos (carpetas con su estructura de archi
 - 📁 **Gestión de proyectos** — sube carpetas completas conservando su estructura de directorios; los archivos se almacenan en disco y se indexan en la base de datos.
 - 🌳 **Explorador de archivos** — el árbol de carpetas se reconstruye a partir de las rutas relativas y se navega de forma recursiva.
 - ⚙️ **Gestión de servicios** — registra servicios asociados a tus proyectos (tipo, puerto, estado) con un endpoint de *ping* para comprobar su disponibilidad.
+- 🔌 **Encendido/apagado por SSH** — arranca y para servicios remotos ejecutando comandos por SSH en su máquina. Las credenciales SSH se guardan **cifradas** (Fernet) y nunca se exponen.
 - 🤖 **Centro de IA (RAG)** — chatea con la IA usando los archivos de un proyecto como contexto. El backend detecta qué archivos menciona tu pregunta y se los pasa al modelo.
 - 🔀 **Multi-modelo** — elige entre **Gemini 2.0 Flash** (Google), **Claude Sonnet 4.6** (Anthropic) o **Llama 3.3 70B** (Groq). El modelo activo se guarda por usuario.
 - 💬 **Historial persistente** — las conversaciones se guardan en la base de datos y se reenvían completas al modelo en cada llamada, para mantener el contexto entre sesiones.
@@ -62,6 +63,7 @@ Cortex/
 | **IA**       | `google-genai` (Gemini), `anthropic` (Claude), `groq` (Llama) |
 | **BD**       | SQLite (migración a PostgreSQL prevista) |
 | **Caché**    | Redis (cliente `redis`) — contador del límite diario y caché del *health* del modelo |
+| **SSH**      | `paramiko` (cliente SSH) + `cryptography` (cifrado Fernet de las credenciales) |
 | **Logging**  | Módulo `logging` de la librería estándar (niveles + rotación de ficheros) |
 
 ---
@@ -110,6 +112,7 @@ ANTHROPIC_API_KEY=tu_api_key
 GROQ_API_KEY=tu_api_key
 REDIS_URL=redis://localhost:6379/0
 STORAGE_BASE=Storage/ArchivosUsuarios
+ENCRYPTION_KEY=tu_clave_fernet   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
 > **Redis** debe estar corriendo para que funcionen el contador del límite diario y la caché del *health* (`redis-server` en local). Si Redis no está disponible, la app **no se rompe**: simplemente deja de cachear y el límite diario no se aplica (los helpers toleran que Redis esté caído).
@@ -183,6 +186,60 @@ Cuando una conversación está vinculada a un proyecto, en cada mensaje el backe
 Tras la respuesta, tanto el mensaje del usuario como el de la IA se guardan en la base de datos.
 
 > Como ningún modelo recuerda conversaciones entre llamadas, **todo el historial se reenvía en cada petición** para mantener la coherencia.
+
+---
+
+## 🔌 Control de servicios por SSH
+
+Además de comprobar si un servicio está vivo (*ping* TCP), Cortex permite **encenderlo y apagarlo de forma remota**. El backend abre una conexión **SSH** contra la máquina donde corre el servicio y ejecuta allí el comando que el usuario haya definido (`systemctl start nginx`, `docker stop api`, un script propio…). Toda la lógica de SSH se centraliza en el servicio [`app/Services/SSHService.py`](AppWeb/BACKEND/app/Services/SSHService.py), construido sobre **paramiko**.
+
+### Credenciales y cifrado en reposo
+
+Para conectarse, cada servicio guarda sus datos de acceso SSH en su propia fila de la tabla `Servicio`: `host` (reutilizado del que ya tenía), `puertoSSH` (22 por defecto), `usuarioSSH`, la **clave privada** y, opcionalmente, su **passphrase**.
+
+La clave privada y la passphrase son secretos: **nunca se guardan en claro**. Se cifran con **Fernet** (cifrado simétrico autenticado, basado en AES) a través del helper [`app/Helpers/Cifrado.py`](AppWeb/BACKEND/app/Helpers/Cifrado.py), que expone `cifrar()` y `descifrar()`. En la base de datos solo vive el texto cifrado (`clavePrivadaCifrada`, `passphraseCifrada`); el texto plano existe únicamente en memoria, durante el instante justo de abrir la conexión.
+
+La clave de cifrado (`ENCRYPTION_KEY`) se configura en el `.env`, **independiente del `SECRET_KEY`** del JWT, y nunca se versiona. Se genera con:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+> ⚠️ **Custodia la `ENCRYPTION_KEY`.** Si se pierde o se cambia, todas las claves ya cifradas dejan de poder descifrarse (`descifrar()` devolverá `None` y el servicio quedará marcado como "credencial no disponible"). Debe respaldarse aparte del repositorio.
+
+Para no exponer nunca el secreto, la respuesta de la API (`ServicioRespuesta`) **no incluye la clave** ni cifrada: solo un booleano calculado `tieneClaveSSH` que le dice al frontend si el servicio ya tiene credenciales configuradas.
+
+### Flujo de un encendido/apagado
+
+```
+POST /servicios/{id}/encender
+   │
+   ├─ 1. Autenticación JWT y filtro por usuario_id   (nadie toca servicios ajenos)
+   ├─ 2. Se valida que el servicio tenga comandoArranque
+   ├─ 3. SSHService.ejecutar_comando(servicio, comando):
+   │        a. descifrar() la clave privada y la passphrase  (en memoria)
+   │        b. cargar la clave en paramiko (RSA / Ed25519 / ECDSA)
+   │        c. abrir la conexión SSH y ejecutar el comando
+   │        d. leer stdout, stderr y el exit_code real
+   ├─ 4. Si exit_code == 0  → estado = "activo" y se persiste
+   └─ 5. Si falla la máquina → 502 Bad Gateway (el estado no cambia)
+```
+
+El servicio SSH **nunca lanza excepciones hacia el controlador**: traduce cualquier fallo (autenticación, host inalcanzable, *timeout*, clave corrupta) a un diccionario estructurado `{ ok, exit_code, stdout, stderr, error }`, y es el controlador quien decide la respuesta HTTP. El **estado del servicio solo se actualiza si el comando terminó con éxito** (`exit_code == 0`); si la máquina remota falla, el estado se mantiene y se devuelve un **`502 Bad Gateway`** (el error es del servidor remoto, no de nuestra API).
+
+| Endpoint | Comando ejecutado | Estado resultante |
+|----------|-------------------|-------------------|
+| `POST /servicios/{id}/encender` | `comandoArranque` | `activo` (si exit 0) |
+| `POST /servicios/{id}/apagar` | `comandoParada` | `inactivo` (si exit 0) |
+
+### Decisiones de seguridad
+
+- **Aislamiento por usuario** — toda consulta filtra por `usuario_id`; un usuario solo puede encender/apagar sus propios servicios.
+- **Cifrado en reposo** — las credenciales se guardan cifradas con Fernet; el texto plano solo se descifra en memoria al conectar y nunca se registra en los logs.
+- **Autenticación acotada** — paramiko se configura con `allow_agent=False` y `look_for_keys=False`, de modo que la única credencial válida es la clave del servicio (no el agente SSH ni las claves del `~/.ssh` del backend).
+- **Auditoría** — cada encendido/apagado correcto se registra con `log_info` (qué usuario, qué acción, qué servicio); los fallos de conexión o autenticación quedan en `log_warning`/`log_error` sin volcar jamás la clave.
+- **Timeouts** — 10 s para establecer la conexión y 30 s para la ejecución del comando, para que una máquina caída no deje la petición colgada.
+- **Verificación del host *(pendiente de endurecer)*** — actualmente se usa `AutoAddPolicy`, que acepta la huella del servidor sin contrastarla contra un `known_hosts`. Es cómodo para una herramienta propia, pero no detecta un *man-in-the-middle*; queda señalado en el código como punto a reforzar.
 
 ---
 
@@ -288,7 +345,9 @@ Base: `http://localhost:8000`
 | `POST` | `/` | Crear un servicio |
 | `GET`  | `/{id}` | Obtener un servicio |
 | `PATCH`| `/{id}` | Actualizar un servicio |
-| `GET`  | `/{id}/ping` | Comprobar disponibilidad del servicio |
+| `GET`  | `/{id}/ping` | Comprobar disponibilidad del servicio (ping TCP) |
+| `POST` | `/{id}/encender` | Encender el servicio ejecutando `comandoArranque` por SSH |
+| `POST` | `/{id}/apagar` | Apagar el servicio ejecutando `comandoParada` por SSH |
 | `DELETE`| `/{id}` | Eliminar un servicio |
 
 ### 💬 Conversaciones — `/conversaciones`
@@ -317,7 +376,7 @@ Base: `http://localhost:8000`
 | **Usuario** | `id`, `nombreUsuario`, `email`, `contrasena` (hash), `fotoPerfil`, `tema`, `modeloIA` |
 | **Proyecto** | `id`, `nombreproyecto`, `descripcion`, `fechaCreacion`, `usuario_id` |
 | **ArchivosProyecto** | `id`, `nombre`, `rutaRelativa`, `rutaDisco`, `proyecto_id` |
-| **Servicio** | `id`, `nombre`, `descripcion`, `tipo`, `estado`, `proyectoAsociado`, `puerto`, `fechaCreacion`, `usuario_id` |
+| **Servicio** | `id`, `nombre`, `descripcion`, `tipo`, `estado`, `proyectoAsociado`, `host`, `puerto`, `fechaCreacion`, `usuario_id`, + acceso SSH: `puertoSSH`, `usuarioSSH`, `clavePrivadaCifrada`, `passphraseCifrada`, `comandoArranque`, `comandoParada` |
 | **Conversacion** | `id`, `titulo`, `fechaCreacion`, `usuario_id`, `proyecto_id`, `archivos_contexto` (CSV de IDs de archivos usados como contexto) |
 | **Mensaje** | `id`, `contenido`, `rol` (`usuario`/`ia`), `fecha`, `conversacion_id` |
 
