@@ -136,6 +136,24 @@ export default function ServicesPanel() {
   const puedeEncender = !accionando && Boolean(servicio.comandoArranque);
   const puedeApagar = !accionando && Boolean(servicio.comandoParada);
 
+  // Mostramos SOLO el boton que tiene sentido: si el servicio esta encendido ofrecemos
+  // "Apagar"; si esta apagado, "Encender". El estado se mantiene al dia con el ping (al
+  // cargar) y con la ultima accion ejecutada.
+  let botonControl;
+  if (servicio.estado === 'activo') {
+    botonControl = (
+      <button type="button" className={styles.botonApagar} onClick={apagar} disabled={!puedeApagar}>
+        Apagar
+      </button>
+    );
+  } else {
+    botonControl = (
+      <button type="button" className={styles.botonEncender} onClick={encender} disabled={!puedeEncender}>
+        Encender
+      </button>
+    );
+  }
+
   return (
     <div className={styles.panel}>
 
@@ -193,12 +211,7 @@ export default function ServicesPanel() {
       <div className={styles.controlSSH}>
         <span className={styles.infoLabel}>Control remoto (SSH)</span>
         <div className={styles.botonesSSH}>
-          <button type="button" className={styles.botonEncender} onClick={encender} disabled={!puedeEncender}>
-            Encender
-          </button>
-          <button type="button" className={styles.botonApagar} onClick={apagar} disabled={!puedeApagar}>
-            Apagar
-          </button>
+          {botonControl}
         </div>
         {accionando && <span className={styles.infoValor}>Ejecutando comando por SSH...</span>}
         {mensajeAccion && <span className={claseMensaje}>{mensajeAccion}</span>}
