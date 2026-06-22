@@ -5,8 +5,7 @@ import apiClient from '../../services/api';
 
 
 // Pagina para actualizar los datos de un servicio.
-// Obtiene el servicio del backend con el id de la URL, rellena cada campo con sus valores
-// actuales y al enviar hace un PATCH para guardarlos.
+// Obtiene el servicio del backend con el id de la URL, rellena cada campo con sus valores actuales y al enviar hace un PATCH para guardarlos.
 export default function ActualizarServicio() {
   const { id } = useParams();   // id del servicio leido de la URL /servicios/:id/actualizar
   const navigate = useNavigate();
@@ -89,8 +88,7 @@ export default function ActualizarServicio() {
       proyectoId = Number(proyectoAsociado);
     }
 
-    // Construimos el cuerpo base. La clave y la passphrase se añaden SOLO si el usuario
-    // escribio algo, para no machacar las que ya estan guardadas al editar otra cosa.
+    // Construimos el cuerpo base. La clave y la passphrase se añaden SOLO si el usuario escribio algo, para no machacar las que ya estan guardadas al editar otra cosa.
     const cuerpo = {
       nombre: nombre,
       tipo: tipo,
