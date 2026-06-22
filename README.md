@@ -13,7 +13,8 @@ Cortex te permite subir proyectos completos (carpetas con su estructura de archi
 - 🌳 **Explorador de archivos** — el árbol de carpetas se reconstruye a partir de las rutas relativas y se navega de forma recursiva.
 - ⚙️ **Gestión de servicios** — registra servicios asociados a tus proyectos (tipo, puerto, estado) con un endpoint de *ping* para comprobar su disponibilidad.
 - 🔌 **Encendido/apagado por SSH** — arranca y para servicios remotos ejecutando comandos por SSH en su máquina. Las credenciales SSH se guardan **cifradas** (Fernet) y nunca se exponen.
-- 🤖 **Centro de IA (RAG)** — chatea con la IA usando los archivos de un proyecto como contexto. El backend detecta qué archivos menciona tu pregunta y se los pasa al modelo.
+- 📊 **Monitorización en vivo** — panel por servicio con latencia, uso de CPU/RAM/disco y carga del sistema, leídos por SSH (más la latencia medida desde el backend) y cacheados en Redis.
+- 🤖 **Centro de IA** — chatea con distintos modelos de IA. *(El motor de contexto de proyectos está en proceso de reimplementación.)*
 - 🔀 **Multi-modelo** — elige entre **Gemini 2.0 Flash** (Google), **Claude Sonnet 4.6** (Anthropic) o **Llama 3.3 70B** (Groq). El modelo activo se guarda por usuario.
 - 💬 **Historial persistente** — las conversaciones se guardan en la base de datos y se reenvían completas al modelo en cada llamada, para mantener el contexto entre sesiones.
 - 🛡️ **Límites de uso** — máximo 50 peticiones de IA por usuario al día (contador en Redis que se reinicia solo cada día) y 20 conversaciones por usuario (la más antigua se elimina al superar el límite).
@@ -163,29 +164,11 @@ npm run lint      # Analizar el código con ESLint
 
 ---
 
-## 🤖 Cómo funciona la IA (RAG)
+## 🤖 Cómo funciona la IA
 
-Cuando una conversación está vinculada a un proyecto, en cada mensaje el backend selecciona qué archivos darle al modelo como contexto siguiendo esta lógica:
+Cada mensaje se envía al modelo activo del usuario (Gemini, Claude o Groq) junto con **todo el historial** de la conversación, ya que ningún modelo recuerda conversaciones entre llamadas. Tras la respuesta, tanto el mensaje del usuario como el de la IA se guardan en la base de datos.
 
-1. **Detección por mención** — parte el mensaje del usuario en palabras y busca archivos del proyecto cuyo nombre (con o sin extensión) coincida exactamente con alguna de ellas.
-2. **Cola de contexto acumulado** — los IDs de los archivos usados se guardan en la conversación (campo `archivos_contexto`, un CSV) para que el contexto se mantenga a lo largo de la conversación. La cola tiene un **tope de 10 archivos**: al superarlo se descartan los más antiguos.
-3. **README perpetuo** — el `README.txt` del proyecto se añade **siempre**, al margen de la cola, de modo que el tope de 10 nunca lo expulsa.
-4. **Orden de prioridad** — al gastar el presupuesto de caracteres, los archivos se ordenan así:
-   1. Los mencionados en el mensaje **actual** (nunca se quedan fuera).
-   2. El **README** del proyecto.
-   3. El resto de la cola acumulada, del más reciente al más antiguo.
-5. **Presupuesto de caracteres por modelo** — el contenido se carga en orden de prioridad hasta un tope que depende del modelo activo, para no superar su límite de tokens (Groq devuelve error 413 con peticiones grandes). Lo que no cabe se recorta o se queda fuera (lo menos prioritario):
-
-   | Modelo | Presupuesto de contexto |
-   |--------|-------------------------|
-   | Llama 3.3 70B (Groq) | 30 000 caracteres |
-   | Gemini 2.0 Flash / Claude Sonnet 4.6 | 60 000 caracteres |
-
-6. **Construcción del `system_prompt`** — con los archivos seleccionados se construye el prompt de sistema y se envía al servicio del modelo activo del usuario. Si no se encontró ningún archivo, se instruye a la IA para que pida al usuario el nombre exacto del archivo.
-
-Tras la respuesta, tanto el mensaje del usuario como el de la IA se guardan en la base de datos.
-
-> Como ningún modelo recuerda conversaciones entre llamadas, **todo el historial se reenvía en cada petición** para mantener la coherencia.
+> 🚧 El motor de contexto de proyectos (RAG) se ha retirado y está **en proceso de reimplementación**. Por ahora la IA responde solo con el historial de la conversación, sin inyectar archivos del proyecto.
 
 ---
 
@@ -243,6 +226,34 @@ El servicio SSH **nunca lanza excepciones hacia el controlador**: traduce cualqu
 
 ---
 
+## 📊 Monitorización de servicios
+
+Cada servicio dispone de un panel de monitorización que muestra, **en vivo**, métricas de la máquina y de la red: **latencia (ms)**, **uso de CPU (%)**, **uso de RAM (%)**, **uso de disco (%)** y **carga del sistema** (load average de 1/5/15 min). La lógica se centraliza en [`app/Services/MonitorService.py`](AppWeb/BACKEND/app/Services/MonitorService.py) y se expone en `GET /servicios/{id}/metricas`.
+
+### Dos fuentes de datos distintas
+
+Las métricas vienen de dos sitios, y conviene distinguirlos:
+
+| Métrica | Origen | Cómo se obtiene |
+|---------|--------|-----------------|
+| **Latencia** | desde el **backend** | se cronometra (`time.perf_counter`) cuánto tarda el `connect` TCP a `host:puerto`. **No usa SSH.** |
+| **CPU, RAM, disco, carga** | **dentro de la máquina** | se leen por **SSH** de `/proc/stat`, `/proc/meminfo`, `df` y `/proc/loadavg`. |
+
+Por eso, aunque el SSH falle (máquina caída, sin credenciales…), la latencia se sigue midiendo y el panel **no se rompe**.
+
+### Una sola conexión SSH por muestra
+
+Abrir una conexión SSH es caro (el *handshake* completo). Para no pagarlo varias veces, **todas** las métricas de la máquina se piden con **un único comando combinado** (una sola conexión), cuya salida se trocea por marcas y se parsea. El **% de CPU** se calcula con **dos lecturas** de `/proc/stat` separadas por `sleep 1`, porque el uso de CPU es una tasa: necesita dos muestras en el tiempo para sacar la diferencia.
+
+### Caché y tolerancia a fallos
+
+- **Caché en Redis (TTL 10 s):** llamadas seguidas (varias pestañas, refrescos) reutilizan la última muestra en vez de reconectar por SSH. El frontend refresca cada 20 s, así que casi siempre encuentra datos frescos.
+- **Tolerante a fallos:** cada métrica que no se pueda leer se devuelve como `null` en vez de tumbar la respuesta. El campo `sshOk` indica si las métricas de la máquina se leyeron bien, y `error` lleva el motivo si algo falló. El endpoint responde **`200 OK`** incluso cuando el SSH falla (a diferencia del encender/apagar, que devuelve `502`): monitorizar nunca debe romper la vista.
+
+En el frontend, el panel pinta los porcentajes como **barras de progreso con color por umbral** (verde < 60 %, ámbar < 85 %, rojo ≥ 85 %) y la latencia y la carga como valores destacados.
+
+---
+
 ## ⚡ Caché con Redis
 
 El backend usa **Redis** (almacén clave-valor en memoria) para datos que se consultan mucho y que cuesta producir. Toda la lógica se centraliza en el helper [`app/Helpers/Cache.py`](AppWeb/BACKEND/app/Helpers/Cache.py), que envuelve al cliente `redis` y expone funciones cómodas:
@@ -261,6 +272,7 @@ El backend usa **Redis** (almacén clave-valor en memoria) para datos que se con
 
 1. **Contador del límite diario de IA** — en cada chat se hace `incrementar_cache("ia:peticiones:{usuario_id}:{YYYY-MM-DD}", 86400)`. La clave lleva la fecha, así cada día usa una clave distinta y el límite **se reinicia solo** al cambiar de día (TTL de 24 h). Al superar el tope se rechaza la petición con un `429` (y se decrementa el contador para no consumir cupo). Sustituye al antiguo `COUNT(*)` contra la base de datos.
 2. **Caché del *health* del modelo** — `GET /mensajes/health` hace una llamada real (de pago) a la API del proveedor. El resultado se cachea **15 s** con clave por modelo (`health:modelo:{modeloIA}`), de modo que un único chequeo se reutiliza para todos los usuarios durante ese tiempo.
+3. **Caché de las métricas de monitorización** — `GET /servicios/{id}/metricas` abre una conexión SSH (cara). El resultado se cachea **10 s** con clave por servicio (`metricas:{servicio_id}`), para que refrescos rápidos o varias pestañas no reconecten una y otra vez.
 
 La conexión se configura con `REDIS_URL` en el `.env` (cliente único compartido en todo el proceso, conexión perezosa). En **local** apunta a `redis://localhost:6379/0` (requiere `redis-server` corriendo); en **Docker** hay un contenedor `redis` propio y `docker-compose.yml` sobreescribe la variable a `redis://redis:6379/0`.
 
@@ -348,6 +360,7 @@ Base: `http://localhost:8000`
 | `GET`  | `/{id}/ping` | Comprobar disponibilidad del servicio (ping TCP) |
 | `POST` | `/{id}/encender` | Encender el servicio ejecutando `comandoArranque` por SSH |
 | `POST` | `/{id}/apagar` | Apagar el servicio ejecutando `comandoParada` por SSH |
+| `GET`  | `/{id}/metricas` | Métricas de monitorización (latencia, CPU, RAM, disco, carga) |
 | `DELETE`| `/{id}` | Eliminar un servicio |
 
 ### 💬 Conversaciones — `/conversaciones`
@@ -377,7 +390,7 @@ Base: `http://localhost:8000`
 | **Proyecto** | `id`, `nombreproyecto`, `descripcion`, `fechaCreacion`, `usuario_id` |
 | **ArchivosProyecto** | `id`, `nombre`, `rutaRelativa`, `rutaDisco`, `proyecto_id` |
 | **Servicio** | `id`, `nombre`, `descripcion`, `tipo`, `estado`, `proyectoAsociado`, `host`, `puerto`, `fechaCreacion`, `usuario_id`, + acceso SSH: `puertoSSH`, `usuarioSSH`, `clavePrivadaCifrada`, `passphraseCifrada`, `comandoArranque`, `comandoParada` |
-| **Conversacion** | `id`, `titulo`, `fechaCreacion`, `usuario_id`, `proyecto_id`, `archivos_contexto` (CSV de IDs de archivos usados como contexto) |
+| **Conversacion** | `id`, `titulo`, `fechaCreacion`, `usuario_id`, `proyecto_id` |
 | **Mensaje** | `id`, `contenido`, `rol` (`usuario`/`ia`), `fecha`, `conversacion_id` |
 
 ---

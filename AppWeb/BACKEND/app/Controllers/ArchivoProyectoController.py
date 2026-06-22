@@ -8,6 +8,7 @@ from app.Schemas.ArchivosProyectoSchema import ArchivoRespuesta,ArchivoContenido
 from app.Core.security import get_usuario_del_token
 from app.Core.config import settings
 from app.Helpers.Log import log_info, log_warning, log_error
+from app.Services.RAG.Ingestion import indexar_archivo, borrar_archivo
 
 
 router = APIRouter()
@@ -110,7 +111,12 @@ async def subir_archivo(
 
     # Construimos la ruta completa usando rutaRelativa para respetar la estructura de carpetas original
     carpeta_destino = os.path.join(settings.STORAGE_BASE, str(usuario.id), str(proyecto_id))
-    ruta_disco = os.path.join(carpeta_destino, rutaRelativa) #Entiende que, cuando un usuario envia un proyecto, envia archivo a archivo usando este endpoint, entonces esto lo que est haciendo es reconstruir todo el proyecto en la memoria del servidor, este caso en /Storage
+    ruta_disco = os.path.join(carpeta_destino, rutaRelativa) 
+    #   ^
+    #   |
+    # Entiende que, cuando un usuario envia un proyecto, envia archivo a archivo usando este endpoint, entonces esto lo que est haciendo es reconstruir todo el proyecto en la memoria del servidor, este caso en /Storage
+
+
 
     # Escritura en disco + alta en BD. Lo envolvemos porque puede fallar (disco lleno, permisos, E/S, BD).
     try:
@@ -120,8 +126,8 @@ async def subir_archivo(
         # Guardar el archivo en disco de forma asincrona, utilizamos la libreria aiofiles que nos permite trabajar de forma asincrona
         #"wb" significa write y binary, se abre el archivo en modo binario para escribir en el
         async with aiofiles.open(ruta_disco, "wb") as f:
-            contenido = await archivo.read() #await para esperar que termine la llamada al sistema, contenido tiene el archivo en bytes
-            await f.write(contenido) #escribe el contenido del archivo, en la ruta designada
+            contenido = await archivo.read() 
+            await f.write(contenido) 
 
         #Y para finalizar lo vamos a insertar en la base de datos(solo ponemos los metadatos del archivo)
         nuevo_archivo = ArchivosProyecto(
@@ -135,14 +141,22 @@ async def subir_archivo(
         db.commit()
         db.refresh(nuevo_archivo)
 
+        # Capturamos el id del archivo, lo vamos a usar para indexar el archivo en el RAG
+        archivo_id = nuevo_archivo.id
+
     except Exception as e:
-        #No hace falta borrar nada en disco, eso ya lo hacemos al borrar el proyecto 
+        #No hace falta borrar nada en disco, eso ya lo hacemos al borrar el proyecto
 
         log_error(f"Fallo la subida del archivo '{rutaRelativa}' al proyecto {proyecto_id}", e)
         db.close()
         raise HTTPException(status_code=500, detail="No se pudo guardar el archivo")
 
     db.close()
+
+
+    # Indexamos el archivo en el RAG (trocear + vectorizar + guardar). Es sincrono: la subida espera a que termine.
+    # indexar_archivo nunca lanza excepcion (un fallo de indexado se registra pero no rompe la subida ya completada). Esto se hace debido a que el archivo esta ya subido en el servidor y en Postgre, no quiero depender de tantos subsistemas para que funcione correctamente
+    indexar_archivo(archivo_id, proyecto_id, usuario.id, rutaRelativa, ruta_disco)
 
     return nuevo_archivo
 
@@ -166,9 +180,15 @@ def eliminar_archivo(archivo_id: int, authorization: str = Header(...)):
     if archivo.rutaDisco and os.path.exists(archivo.rutaDisco):
         os.remove(archivo.rutaDisco)
 
-    db.delete(archivo)
+    # Guardamos el id antes de borrar para limpiar despues sus vectores en Chroma
+    archivo_id_borrado = archivo.id
+
+    db.delete(archivo)  # el cascade del modelo borra tambien sus filas en ChunkArchivo
     db.commit()
     db.close()
+
+    # Quitamos los vectores del archivo en Chroma (vive fuera de la BD, el cascade no llega ahi)
+    borrar_archivo(archivo_id_borrado)
 
     return {"mensaje": "Archivo eliminado correctamente"}
 

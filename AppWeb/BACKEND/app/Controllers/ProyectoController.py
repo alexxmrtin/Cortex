@@ -8,14 +8,16 @@ from app.Core.security import get_usuario_del_token
 from app.Core.config import settings
 from app.Helpers.Sanitizar import sanitizar
 from app.Helpers.Log import log_error,log_warning
+from app.Services.RAG.Ingestion import borrar_proyecto, reindexar_proyecto
 
 router = APIRouter()
 
-# GET    /proyectos/            → Lista todos los proyectos del usuario
-# POST   /proyectos/            → Crea un nuevo proyecto
-# GET    /proyectos/{id}        → Obtiene un proyecto concreto
-# PATCH  /proyectos/{id}        → Actualiza nombre o descripcion
-# DELETE /proyectos/{id}        → Elimina el proyecto
+# GET    /proyectos/                → Lista todos los proyectos del usuario
+# POST   /proyectos/                → Crea un nuevo proyecto
+# GET    /proyectos/{id}            → Obtiene un proyecto concreto
+# PATCH  /proyectos/{id}            → Actualiza nombre o descripcion
+# DELETE /proyectos/{id}            → Elimina el proyecto
+# POST   /proyectos/{id}/reindexar  → Reindexa en el RAG todos los archivos pertenecientes a un proyecto
 
 
 
@@ -128,8 +130,29 @@ def eliminar_proyecto(proyecto_id: int, authorization: str = Header(...)):
             db.close()
             raise HTTPException(status_code=500, detail="No se pudo eliminar el proyecto")
 
-    db.delete(proyecto)
+    db.delete(proyecto)  # el cascade borra los ArchivosProyecto y, a su vez, sus filas en ChunkArchivo
     db.commit()
     db.close()
 
+    # Quitamos todos los vectores del proyecto en Chroma (vive fuera de la BD, el cascade no llega ahi)
+    borrar_proyecto(proyecto_id)
+
     return {"mensaje": "Proyecto eliminado correctamente"}
+
+
+# Estructura que recibe: solo el token JWT en el header Authorization
+# Reindexa en el RAG todos los archivos del proyecto. Util para proyectos subidos antes de existir el RAG o para reconstruir el indice. Es sincrono: puede tardar si el proyecto tiene muchos archivos.
+@router.post("/{proyecto_id}/reindexar")
+def reindexar(proyecto_id: int, authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+
+    db = SessionLocal()
+    proyecto = db.query(Proyecto).filter(Proyecto.id == proyecto_id, Proyecto.usuario_id == usuario.id).first() # SELECT * FROM Proyecto WHERE id = proyecto_id AND usuario_id = usuario.id LIMIT 1
+    db.close()
+
+    if not proyecto:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+
+    total_chunks = reindexar_proyecto(proyecto_id, usuario.id)
+
+    return {"mensaje": "Proyecto reindexado correctamente", "chunks_indexados": total_chunks}

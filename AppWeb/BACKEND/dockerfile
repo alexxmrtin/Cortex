@@ -1,6 +1,11 @@
 FROM python:3.12-slim
 WORKDIR /app
 
+# Los modelos del RAG (embeddings + reranker) se descargan de HuggingFace (~1-2 GB) la primera vez.
+# Apuntamos su cache a /app/Cache, que docker-compose monta como volumen persistente, para que NO se
+# vuelvan a descargar en cada arranque del contenedor.
+ENV HF_HOME=/app/Cache/huggingface
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

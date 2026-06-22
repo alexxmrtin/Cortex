@@ -19,7 +19,8 @@ AppWeb/BACKEND/Storage/
 AppWeb/BACKEND/Logs/
 AppWeb/BACKEND/Cache/
 
-
+# Otros
+ComoHacerUnRAG.md
 ###FRONTEND###
 
 # Dependencies

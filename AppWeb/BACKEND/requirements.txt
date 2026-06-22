@@ -16,6 +16,11 @@ redis==5.2.1 #Cliente de Redis para el cacheo en memoria (contadores, pings, etc
 cryptography==48.0.0 #Cifrado simetrico (Fernet) para guardar las credenciales SSH cifradas en la BD
 paramiko==5.0.0 #Cliente SSH para conectarse a las maquinas remotas y ejecutar comandos (encender/apagar servicios)
 
+#---RAG (Centro de IA)---
+chromadb==0.5.23 #Base vectorial embebida (persistente en disco) donde se guardan los embeddings de los chunks de codigo
+sentence-transformers==3.3.1 #Modelos de embeddings y reranker locales (BGE) ejecutados en CPU. Arrastra torch; la 1a ejecucion descarga ~1-2 GB de modelos
+rank-bm25==0.2.2 #Indice lexico BM25 (en memoria) para la busqueda hibrida: recupera por terminos exactos/identificadores que el vectorial se salta
+
 #Dependencias del backend
 
 #---CLASES BASE---
