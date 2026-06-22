@@ -57,3 +57,23 @@ def llamar_gemini(historial_db, mensaje_nuevo: str, system_prompt: str = "") -> 
         # para que el controlador la siga recibiendo y haga su rollback normal
         log_error_servicio("Gemini", e)
         raise
+
+
+# Igual que llamar_gemini, pero en modo STREAMING: en vez de devolver el texto entero, va "produciendo" los fragmentos a medida que el modelo los genera. Lo consume el endpoint de chat con streaming.
+def llamar_gemini_stream(historial_db, mensaje_nuevo: str, system_prompt: str = ""):
+    historial = _convertir_historial(historial_db)
+
+    if system_prompt:
+        config = types.GenerateContentConfig(system_instruction=system_prompt)
+    else:
+        config = None
+
+    try:
+        chat = cliente.chats.create(model="gemini-2.0-flash", history=historial, config=config)
+        for fragmento in chat.send_message_stream(mensaje_nuevo):
+            if fragmento.text:
+                yield fragmento.text #yield devuelve cada fragmento uno a uno, si pusieramos un return aqui, devolveria solo el primer fragmento
+
+    except Exception as e:
+        log_error_servicio("Gemini", e)
+        raise

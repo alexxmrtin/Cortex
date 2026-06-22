@@ -61,3 +61,29 @@ def llamar_claude(historial_db, mensaje_nuevo: str, system_prompt: str = "") -> 
         # para que el controlador la siga recibiendo y haga su rollback normal
         log_error_servicio("Claude", e)
         raise
+
+
+# Igual que llamar_claude, pero en modo STREAMING: va "produciendo" (yield) los fragmentos segun llegan.
+def llamar_claude_stream(historial_db, mensaje_nuevo: str, system_prompt: str = ""):
+    cliente = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+    historial = _convertir_historial(historial_db)
+    historial.append({"role": "user", "content": mensaje_nuevo})
+
+    kwargs = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "messages": historial
+    }
+    if system_prompt:
+        kwargs["system"] = system_prompt
+
+    try:
+        # El SDK de Anthropic expone el streaming como un context manager con .text_stream
+        with cliente.messages.stream(**kwargs) as stream:
+            for fragmento in stream.text_stream:
+                yield fragmento
+
+    except Exception as e:
+        log_error_servicio("Claude", e)
+        raise

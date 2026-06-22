@@ -17,8 +17,15 @@ def _obtener_coleccion():
     if _coleccion is None:
         # Import perezoso para no cargar chromadb al importar el modulo
         import chromadb
+        from chromadb.config import Settings as ChromaSettings
         log_info(f"Abriendo base vectorial Chroma en '{settings.RAG_PERSIST_DIR}'")
-        cliente = chromadb.PersistentClient(path=settings.RAG_PERSIST_DIR)
+        # anonymized_telemetry=False apaga el envio de estadisticas de uso a los servidores de Chroma.
+        # Lo desactivamos por privacidad (el codigo no debe salir) y porque su telemetria tiene un bug
+        # que ensucia los logs con "capture() takes 1 positional argument but 3 were given" (es inofensivo).
+        cliente = chromadb.PersistentClient(
+            path=settings.RAG_PERSIST_DIR,
+            settings=ChromaSettings(anonymized_telemetry=False)
+        )
         # hnsw:space=cosine -> usa distancia coseno, coherente con los embeddings normalizados de Embeddings.py
         _coleccion = cliente.get_or_create_collection(
             name=NOMBRE_COLECCION,

@@ -267,3 +267,231 @@ La lógica pura (sin librerías pesadas) se probó aislada: el tokenizador parte
 ### Resumen de la fase
 
 **Fase 2 = ya sabemos buscar.** Dada una pregunta, devolvemos los ~8 trozos de código más relevantes, combinando significado (vectores) y palabras exactas (BM25), y afinando con un reranker. Lo que falta es **usar** esos trozos: construir el prompt y pedirle la respuesta a la IA, con citaciones y abstención. Eso es la **Fase 3** (generación anclada).
+
+---
+
+## Fase 3
+
+Aquí **se cierra el círculo**: cogemos los trozos que recupera la Fase 2, construimos con ellos el mensaje de sistema para la IA y lo enchufamos al chat. Es el momento en que el RAG por fin "responde". El término clave es **generación anclada**: que la IA responda *agarrada* al código real del proyecto, no a lo que se imagina.
+
+### El flujo, ahora completo
+
+```
+Usuario pregunta en el chat
+   │
+   ├─ ¿la conversación está ligada a un proyecto?
+   │        │ sí
+   │        ▼
+   │   Retrieval.recuperar()  → 8 trozos relevantes      (Fase 2)
+   │        ▼
+   │   PromptBuilder.construir_prompt() → system_prompt + fuentes
+   │        ▼
+   └─ llamar_gemini/claude/groq(historial, pregunta, system_prompt)   (sin cambios)
+            ▼
+        respuesta + fuentes → frontend
+```
+
+### 1. `PromptBuilder.py` — el que arma las instrucciones
+
+Coge los trozos recuperados y construye el **system_prompt**: el mensaje que le dice a la IA *quién es, qué reglas sigue y con qué material trabaja*. Mete tres garantías del roadmap:
+
+- **Abstención:** se le ordena que, si la respuesta no está en el contexto, lo diga ("no aparece en los archivos que tengo") en lugar de inventar. Esto es lo que combate las alucinaciones.
+- **Citaciones:** se le pide que cite de qué archivo y líneas saca cada cosa, con el formato `[ruta (Lx-Ly)]`. Para que pueda hacerlo, cada trozo del contexto va etiquetado con su origen:
+  ```
+  === src/login.py (L40-58) ===
+  <código del trozo>
+  ```
+- **Anti prompt-injection:** se le advierte que el contexto son **datos**, no instrucciones — así, si un archivo contiene texto tipo "ignora todo y haz X", la IA no le hace caso. Es una medida de seguridad: separa las instrucciones de sistema del contenido recuperado.
+
+Además aplica una técnica llamada **"lost in the middle"**: las IAs prestan menos atención a lo que cae en *mitad* de un contexto largo. Para evitarlo, el `PromptBuilder` coloca el trozo más relevante al **principio**, el segundo más relevante al **final**, y deja los menos importantes en el centro. (Lo probamos: 5 trozos ordenados por relevancia `[0,1,2,3,4]` se reorganizan a `[0,2,4,3,1]`.)
+
+Devuelve **dos cosas**: el texto del prompt y la lista de **fuentes** (qué archivos y líneas se usaron), deduplicada.
+
+### 2. Las "fuentes" y el cambio en el schema
+
+Para que el frontend pueda mostrar **citaciones clicables** en el futuro, la respuesta del chat ahora incluye las fuentes. Se añadió:
+
+- Un modelo `FuenteRespuesta` (`rutaRelativa`, `archivo_id`, `linea_inicio`, `linea_fin`).
+- Un campo `fuentes: list[FuenteRespuesta] = []` en `MensajeRespuesta`.
+
+Es **opcional y compatible hacia atrás**: los mensajes antiguos del historial (que no tienen fuentes) simplemente devuelven `[]`. Lo verificamos: el schema funciona tanto si el objeto trae `fuentes` como si no.
+
+Detalle de implementación: las fuentes **no se guardan en la base de datos** (son efímeras de esa respuesta). Se "pegan" al objeto del mensaje justo antes de devolverlo (`mensaje_ia.fuentes = fuentes`), solo para serializarlas al frontend.
+
+### 3. El enganche en `MensajeController`
+
+En el endpoint del chat (`chat_ia`), justo antes de llamar a la IA, se añadió el bloque RAG:
+
+```
+si la conversacion tiene proyecto:
+    chunks = recuperar(pregunta, usuario, proyecto)
+    system_prompt, fuentes = construir_prompt(pregunta, chunks)
+```
+
+Puntos importantes de este enganche:
+
+- **No se tocaron las llamadas a las APIs de IA.** Las funciones `llamar_gemini/claude/groq` ya aceptaban un `system_prompt`; simplemente ahora le pasamos uno con contenido en vez de vacío.
+- **Si no hay proyecto**, el `system_prompt` queda vacío y la IA responde como un chat normal (sin RAG).
+- **Tolerante a fallos:** si la recuperación falla, se registra y el chat sigue respondiendo *sin* contexto, en vez de romperse. Misma filosofía que el resto del proyecto.
+
+### ¿Cómo sé que funciona?
+
+La lógica pura (sin modelos) se probó aislada: el reordenado *lost-in-the-middle* coloca bien los extremos, el prompt incluye las etiquetas de citación + las tres reglas, las fuentes se deduplican, y el caso sin contexto genera el prompt de fallback. El schema se validó con y sin fuentes. La cadena completa con modelos reales se probará en Docker.
+
+### Resumen de la fase
+
+**Fase 3 = el RAG ya responde.** Cuando preguntas sobre un proyecto, la IA recibe los trozos de código relevantes con reglas estrictas (responder solo desde el contexto, citar, no inventar) y devuelve la respuesta junto con sus fuentes. El núcleo RAG está **funcionalmente completo**. Lo que viene es la capa **copilot**: que entienda preguntas de seguimiento (reescritura multi-turno) y memoria — la **Fase 4**.
+
+---
+
+## Fase 4
+
+Esta es la primera pieza de la **capa copilot**: hacer que el RAG entienda las **preguntas de seguimiento** (follow-ups) dentro de una conversación.
+
+### El problema
+
+Imagina esta conversación:
+
+```
+Usuario:    ¿qué hace verificar_credenciales?
+Asistente:  valida el usuario y la contraseña con bcrypt...
+Usuario:    ¿y eso dónde se usa?      ← follow-up
+```
+
+Cuando el usuario pregunta "**¿y eso dónde se usa?**", esa frase suelta es **inútil para buscar**: no tiene ningún término aprovechable. Si se la pasamos al recuperador tal cual, no encuentra nada relevante, porque "eso" no significa nada fuera de la conversación. El RAG, que mira cada pregunta de forma aislada, se pierde en los follow-ups.
+
+### La solución: reescritura de consulta multi-turno
+
+Antes de buscar, **reescribimos la pregunta a una versión autónoma** usando el historial, resolviendo las referencias:
+
+```
+"¿y eso dónde se usa?"   →   "¿dónde se usa la función verificar_credenciales?"
+```
+
+Esa consulta reescrita **sí** tiene términos buscables, así que el recuperador encuentra lo correcto.
+
+### 1. `QueryRewrite.py`
+
+Su función `reescribir(historial, pregunta, modelo)` hace justo eso:
+
+- Si **no hay historial** (primer mensaje), devuelve la pregunta tal cual — no hay nada que resolver, y así no gastamos una llamada de más.
+- Si hay historial, coge los **últimos mensajes** (pocos, para que sea barato), se los da a la IA con la instrucción "reescribe esto como una búsqueda autónoma" y devuelve el resultado.
+- **Reutiliza el modelo activo del usuario** (Gemini/Claude/Groq) — no añade dependencias nuevas.
+- Es **tolerante a fallos**: si la reescritura falla, devuelve la pregunta original. Nunca rompe el chat por esto.
+
+### 2. El detalle CLAVE: la reescritura es solo para BUSCAR
+
+Esto es importante de entender. La pregunta se usa en dos sitios distintos, y solo uno se reescribe:
+
+```
+"¿y eso dónde se usa?"
+   │
+   ├─ reescrita → "¿dónde se usa verificar_credenciales?" → RECUPERAR contexto
+   │
+   └─ ORIGINAL  → "¿y eso dónde se usa?"                    → se la pasa a la IA para RESPONDER
+```
+
+La consulta reescrita se usa **únicamente para recuperar** los trozos. La pregunta **original** es la que recibe la IA para generar la respuesta (junto con su historial completo, que ya tenía). Así la IA responde de forma natural al hilo, pero con el contexto correcto recuperado.
+
+### 3. El enganche en `MensajeController`
+
+Dentro del bloque RAG, antes de `recuperar`, se añadió una línea: `consulta_rag = reescribir(...)`, y se usa `consulta_rag` para recuperar y construir el prompt, dejando `datos.contenido` (original) intacto para la llamada a la IA.
+
+### Sobre la "memoria/estado" (lo que NO se hizo, y por qué)
+
+El plan de la Fase 4 también mencionaba *memoria con resumen e historial comprimido*. Tras revisarlo, **no hacía falta implementarlo ahora**, por una razón concreta: la app **ya reenvía el historial completo** a la IA en cada mensaje (la coherencia conversacional para *responder* ya funciona). El resumen solo aportaría cuando una conversación se vuelve larguísima (para ahorrar tokens), y con el tope de 20 conversaciones y conversaciones normales no es un problema todavía. La "memoria para *buscar*" —que sí faltaba— es justo lo que resuelve la reescritura. Así que se deja el resumen como optimización futura, no como deuda funcional.
+
+### ¿Cómo sé que funciona?
+
+Se probó la lógica pura (con un modelo simulado): sin historial devuelve la pregunta original sin llamar al modelo; con historial dispara la reescritura; y el formato del contexto (Usuario/Asistente) es correcto. La reescritura real con modelo se ejercitará igual que el resto, en Docker.
+
+### Resumen de la fase
+
+**Fase 4 = el RAG ya entiende follow-ups.** Las preguntas encadenadas ("¿y eso?", "¿dónde se usa?") se reescriben a consultas autónomas antes de buscar, así que recuperan el contexto correcto, mientras la IA sigue respondiendo de forma natural al hilo. Lo que queda es **streaming** (que la respuesta aparezca poco a poco) — la **Fase 5** — y la integración en el frontend.
+
+---
+
+## Fase 5
+
+Última pieza del backend: **streaming**. Que la respuesta de la IA aparezca **poco a poco**, palabra a palabra, en vez de esperar a que esté entera. Es buena parte de la sensación "copilot".
+
+### El problema
+
+Hasta ahora, el chat funcionaba así: el usuario pregunta → el backend espera a que la IA genere **toda** la respuesta → la devuelve de golpe. Si la respuesta es larga, el usuario mira una pantalla quieta varios segundos. Con streaming, ve el texto **apareciendo en tiempo real**, como en ChatGPT/Copilot.
+
+### Qué es SSE
+
+**SSE (Server-Sent Events)** es una forma de que el servidor envíe datos al cliente **en goteo** por una sola conexión HTTP, en vez de una respuesta única. El formato es una sucesión de líneas `data: <contenido>\n\n`. El frontend va leyendo esos trozos según llegan.
+
+### 1. Variantes *streaming* en los servicios de IA
+
+Cada servicio (`Gemini/Groq/Claude`) tiene ahora una función gemela `llamar_X_stream` que, en vez de **devolver** el texto entero (`return`), lo va **produciendo** por fragmentos (`yield`) según el modelo los genera. Los tres SDKs soportan streaming nativo:
+
+- Gemini: `send_message_stream(...)`
+- Groq: `create(..., stream=True)`
+- Claude: `messages.stream(...)`
+
+Las funciones originales (`llamar_gemini`, etc.) se mantienen intactas para el endpoint normal.
+
+### 2. El nuevo endpoint `POST /chat/stream`
+
+Se añadió **junto al `/chat` de siempre** (que sigue existiendo para compatibilidad). Hace exactamente la misma preparación que el normal —límite diario, guardar el mensaje del usuario, reescritura multi-turno, recuperación, construcción del prompt— pero en vez de devolver un JSON, devuelve un **stream de eventos** (`StreamingResponse` con `text/event-stream`).
+
+Emite tres tipos de evento:
+
+```
+{"tipo":"token","contenido":"..."}       ← cada fragmento de texto (se van concatenando)
+{"tipo":"fin","id":123,"fuentes":[...]}   ← al acabar: id del mensaje guardado + fuentes del RAG
+{"tipo":"error","detalle":"..."}          ← si algo falla a mitad
+```
+
+El flujo dentro del endpoint:
+1. Hace la preparación y **cierra la sesión de BD**.
+2. Empieza a "tirar" tokens del modelo, y por cada uno emite un evento `token`.
+3. Mientras los emite, los va **acumulando** en memoria.
+4. Al terminar, junta todo el texto, **guarda la respuesta completa** en la BD y emite el evento `fin` con el id y las fuentes.
+
+### 3. Dos detalles delicados del streaming
+
+- **Sesiones de BD dentro del generador:** como la respuesta se genera *después* de cerrar la sesión inicial, el historial se convierte a objetos planos (`SimpleNamespace`) antes de cerrarla, para no acceder a objetos ORM "desconectados" (el mismo problema que ya vimos en las pruebas). Y para guardar el mensaje final se abre una sesión nueva dentro del generador.
+- **Errores a mitad de stream:** una vez empezamos a enviar tokens, la respuesta HTTP ya es `200` y no se puede cambiar a un código de error. Por eso, si la IA falla a mitad, no lanzamos una excepción HTTP: deshacemos (borramos el mensaje del usuario, devolvemos el cupo del límite) y avisamos con un evento `{"tipo":"error"}` por el propio stream.
+
+### ¿Cómo sé que funciona?
+
+Sintaxis verificada en los cuatro archivos y el formato SSE probado (los eventos `token`/`fin` se serializan bien y los fragmentos se reconcatenan correctamente). El streaming real necesita una API key válida del proveedor para probarse de punta a punta (la prueba anterior en Docker no la necesitaba porque solo tocaba recuperación, no generación).
+
+### Resumen de la fase
+
+**Fase 5 = experiencia copilot completa en el backend.** La respuesta puede llegar token a token por SSE, con las fuentes al final. Con esto, **el backend del RAG-copilot está terminado**: ingesta, búsqueda híbrida + reranking, generación anclada con citaciones, follow-ups multi-turno y streaming. Lo único que queda fuera del backend es el **frontend**: consumir el stream y pintar las citaciones clicables.
+
+---
+
+## Frontend (conexión)
+
+Última parte: enganchar todo el RAG a la interfaz del Centro de IA. Dos cosas: **consumir el streaming** y **mostrar las citaciones**.
+
+### 1. Streaming en el chat
+
+Antes, el chat usaba `axios.post` al endpoint normal y esperaba la respuesta entera. El problema: **axios no sabe leer respuestas en streaming** en el navegador. Por eso se cambió a la API nativa **`fetch`**, que sí permite leer el cuerpo poco a poco:
+
+- Se llama a `POST /chat/stream` con `fetch`.
+- Se lee el cuerpo con un *reader* (`response.body.getReader()`), que va entregando trozos de bytes.
+- Se decodifican y se parten por eventos SSE (`\n\n`). Cada evento es un JSON con su `tipo`.
+- Por cada evento `token`, se va **añadiendo el texto a la burbuja de la IA**, que crece en pantalla en tiempo real.
+- Con el evento `fin`, se guardan las **fuentes** en ese mensaje.
+
+Detalle de UX: los puntitos de "pensando" se muestran solo hasta que llega el **primer token**; a partir de ahí, el texto aparece solo.
+
+### 2. Citaciones clicables
+
+Cuando un mensaje de la IA trae `fuentes`, debajo de la burbuja se pintan unos *chips* tipo `📄 src/auth/login.py (L40-58)`. Al hacer clic, se abre un **modal** que muestra el contenido del archivo, reutilizando el endpoint que ya existía (`GET /archivos/{id}/contenido`). Así el usuario puede comprobar de dónde sacó la IA cada cosa.
+
+Limitación conocida: las fuentes son **efímeras** (no se guardan en la BD), así que solo aparecen en los mensajes generados en la sesión actual. Al recargar una conversación antigua, el texto está pero no los chips. Es una decisión consciente (las citaciones son de cada respuesta, no del historial).
+
+### ¿Cómo sé que funciona?
+
+El frontend **compila** (build de Vite correcta, 274 módulos) y pasa el **linter**. La prueba visual real (ver los tokens aparecer y abrir una cita) se hace levantando la app.
+
+### Resumen
+
+**El RAG-copilot está conectado de punta a punta:** subes archivos → se indexan → preguntas en el Centro de IA → la respuesta aparece en streaming, anclada en tu código, con citaciones clicables que abren el archivo. El proyecto Cortex ya tiene un copilot funcional sobre tus propios proyectos.

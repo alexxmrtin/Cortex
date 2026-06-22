@@ -1,22 +1,33 @@
+import json
+from types import SimpleNamespace
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.responses import StreamingResponse
 from app.Core.database import SessionLocal
 from app.Models.Mensaje import Mensaje
 from app.Models.Conversacion import Conversacion
 from app.Schemas.MensajeSchema import MensajeRespuesta, MensajeChatEntrada
 from app.Core.security import get_usuario_del_token
 from app.Helpers.Cache import incrementar_cache, decrementar_cache,guardar_cache,obtener_cache
-from app.Helpers.Log import log_info
-from app.Services.GeminiService import llamar_gemini, ping_gemini
-from app.Services.ClaudeService import llamar_claude, ping_claude
-from app.Services.GroqService import llamar_groq, ping_groq
+from app.Helpers.Log import log_info, log_error
+from app.Services.GeminiService import llamar_gemini, ping_gemini, llamar_gemini_stream
+from app.Services.ClaudeService import llamar_claude, ping_claude, llamar_claude_stream
+from app.Services.GroqService import llamar_groq, ping_groq, llamar_groq_stream
+from app.Services.RAG.Retrieval import recuperar
+from app.Services.RAG.PromptBuilder import construir_prompt
+from app.Services.RAG.QueryRewrite import reescribir
 
 router = APIRouter()
 
-# GET    /mensajes/conversacion/{id}        → Lista todos los mensajes de una conversacion
-# POST   /mensajes/conversacion/{id}/chat   → Envia un mensaje al chat de IA y guarda la respuesta
-# DELETE /mensajes/{id}                     → Elimina un mensaje
-# GET    /mensajes/health                   → Comprueba si el modelo activo del usuario responde
+# Modelos servidos por Groq (un mismo SDK sirve varios). Sirve para enrutar el modelo activo del usuario
+# al servicio correcto en los tres sitios donde se despacha (health, chat, chat/stream).
+MODELOS_GROQ = ("qwen/qwen3-32b", "llama-3.3-70b-versatile")
+
+# GET    /mensajes/conversacion/{id}             → Lista todos los mensajes de una conversacion
+# POST   /mensajes/conversacion/{id}/chat        → Envia un mensaje al chat de IA y guarda la respuesta
+# POST   /mensajes/conversacion/{id}/chat/stream → Igual que /chat pero con streaming (SSE), token a token
+# DELETE /mensajes/{id}                          → Elimina un mensaje
+# GET    /mensajes/health                        → Comprueba si el modelo activo del usuario responde
 
 
 # Estructura que recibe: solo el token JWT en el header Authorization
@@ -34,8 +45,8 @@ def health_modelo(authorization: str = Header(...)):
 
     if usuario.modeloIA == "claude-sonnet-4-6":
         activo = ping_claude()
-    elif usuario.modeloIA == "llama-3.3-70b-versatile":
-        activo = ping_groq()
+    elif usuario.modeloIA in MODELOS_GROQ:
+        activo = ping_groq(usuario.modeloIA)
     else:
         activo = ping_gemini()
 
@@ -118,15 +129,27 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
     # El historial para la IA es todo menos el último mensaje (que es el que acaba de enviar)
     historial_previo = historial[:-1]
 
-    # Por ahora no se inyecta ningun contexto de proyecto (el motor RAG se va a reimplementar)
+    # --- RAG: si la conversacion esta ligada a un proyecto, recuperamos los trozos de codigo relevantes y construimos el system_prompt anclado (con citaciones y abstencion). Si no hay proyecto, el prompt queda vacio y la IA responde como un chat normal.
     system_prompt = ""
+    fuentes = []
+    if conversacion.proyecto_id:
+        try:
+            # Copilot (multi-turno): reescribimos la pregunta a una consulta autonoma resolviendo referencias ("eso", "esa funcion"...) con el historial. Se usa SOLO para recuperar; la pregunta original (datos.contenido) es la que respondera la IA mas abajo, sin tocar.
+            consulta_rag = reescribir(historial_previo, datos.contenido, usuario.modeloIA)
+            chunks = recuperar(consulta_rag, usuario.id, conversacion.proyecto_id)
+            system_prompt, fuentes = construir_prompt(consulta_rag, chunks)
+        except Exception as e:
+            # Si la recuperacion falla, no rompemos el chat: respondemos sin contexto de proyecto.
+            log_error(f"Fallo la recuperacion RAG en la conversacion {conversacion_id}", e)
+            system_prompt = ""
+            fuentes = []
 
     #Llamadas a las APIs de las IAs
     try:
         if usuario.modeloIA == "claude-sonnet-4-6":
             respuesta_texto = llamar_claude(historial_previo, datos.contenido, system_prompt)
-        elif usuario.modeloIA == "llama-3.3-70b-versatile":
-            respuesta_texto = llamar_groq(historial_previo, datos.contenido, system_prompt)
+        elif usuario.modeloIA in MODELOS_GROQ:
+            respuesta_texto = llamar_groq(historial_previo, datos.contenido, system_prompt, usuario.modeloIA)
         else:
             respuesta_texto = llamar_gemini(historial_previo, datos.contenido, system_prompt)
 
@@ -147,7 +170,127 @@ def chat_ia(conversacion_id: int, datos: MensajeChatEntrada, authorization: str 
     db.refresh(mensaje_ia)
     db.close()
 
+    # Adjuntamos las fuentes del RAG a la respuesta (atributo no persistido, solo para serializar al frontend).
+    # No se guardan en la BD: son efimeras de esta respuesta. El schema MensajeRespuesta las incluye.
+    mensaje_ia.fuentes = fuentes
+
     return mensaje_ia
+
+
+
+# Estructura que recibe: datos = { "contenido": str }
+# Igual que /chat pero con STREAMING (SSE): la respuesta de la IA llega fragmento a fragmento en tiempo real.
+# El endpoint /chat normal se mantiene para compatibilidad; este es el que dara la sensacion "copilot".
+#
+# Formato de la respuesta (text/event-stream): una sucesion de eventos "data: <json>\n\n":
+#   {"tipo":"token","contenido":"..."}        -> un fragmento de texto (se van concatenando)
+#   {"tipo":"fin","id":123,"fuentes":[...]}    -> fin: id del mensaje guardado + fuentes del RAG
+#   {"tipo":"error","detalle":"..."}           -> algo fallo durante la generacion
+@router.post("/conversacion/{conversacion_id}/chat/stream")
+def chat_ia_stream(conversacion_id: int, datos: MensajeChatEntrada, authorization: str = Header(...)):
+    usuario = get_usuario_del_token(authorization)
+
+    db = SessionLocal()
+
+    # Verificamos que la conversacion existe y es del usuario
+    conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id, Conversacion.usuario_id == usuario.id).first()
+    if not conversacion:
+        db.close()
+        raise HTTPException(status_code=404, detail="Conversacion no encontrada")
+
+    # Limite diario de IA (mismo contador en Redis que /chat)
+    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    clave_limite = "ia:peticiones:" + str(usuario.id) + ":" + hoy
+    peticiones_hoy = incrementar_cache(clave_limite, 86400)
+    if peticiones_hoy is not None and peticiones_hoy > 50:
+        decrementar_cache(clave_limite)
+        db.close()
+        log_info(f"Limite diario de IA alcanzado por el usuario {usuario.id}")
+        raise HTTPException(status_code=429, detail="Has alcanzado el límite diario de 50 peticiones")
+
+    # Guardamos el mensaje del usuario
+    mensaje_usuario = Mensaje(contenido=datos.contenido, rol="usuario", conversacion_id=conversacion_id)
+    db.add(mensaje_usuario)
+    db.commit()
+    mensaje_usuario_id = mensaje_usuario.id
+
+    # Historial previo (todo menos el mensaje recien guardado)
+    historial = db.query(Mensaje).filter(Mensaje.conversacion_id == conversacion_id).order_by(Mensaje.fecha).all()
+    historial_previo_orm = historial[:-1]
+
+    # Convertimos el historial a objetos planos (SimpleNamespace) porque la respuesta se genera DENTRO de un generador, despues de cerrar la sesion; asi evitamos acceder a objetos ORM "desconectados".
+    historial_previo = []
+    for m in historial_previo_orm:
+        historial_previo.append(SimpleNamespace(rol=m.rol, contenido=m.contenido))
+
+    # Capturamos en primitivas todo lo que el generador necesita y cerramos la sesion
+    proyecto_id = conversacion.proyecto_id
+    modelo = usuario.modeloIA
+    usuario_id = usuario.id
+    contenido = datos.contenido
+    db.close()
+
+    # RAG (igual que /chat): reescritura multi-turno + recuperacion + construccion del prompt
+    system_prompt = ""
+    fuentes = []
+    if proyecto_id:
+        try:
+            consulta_rag = reescribir(historial_previo, contenido, modelo)
+            chunks = recuperar(consulta_rag, usuario_id, proyecto_id)
+            system_prompt, fuentes = construir_prompt(consulta_rag, chunks)
+        except Exception as e:
+            log_error(f"Fallo la recuperacion RAG (stream) en la conversacion {conversacion_id}", e)
+            system_prompt = ""
+            fuentes = []
+
+    # Empaqueta un evento como linea SSE
+    def sse(payload: dict) -> str:
+        return "data: " + json.dumps(payload, ensure_ascii=False) + "\n\n"
+
+    # Generador que produce los eventos SSE: tokens segun llegan, luego el evento final con id + fuentes.
+    def generador():
+        acumulado = []
+        try:
+            if modelo == "claude-sonnet-4-6":
+                stream = llamar_claude_stream(historial_previo, contenido, system_prompt)
+            elif modelo in MODELOS_GROQ:
+                stream = llamar_groq_stream(historial_previo, contenido, system_prompt, modelo)
+            else:
+                stream = llamar_gemini_stream(historial_previo, contenido, system_prompt)
+
+            for fragmento in stream:
+                acumulado.append(fragmento)
+                yield sse({"tipo": "token", "contenido": fragmento})
+
+            respuesta_texto = "".join(acumulado)
+
+            # Guardamos la respuesta completa de la IA en la BD (sesion propia del generador)
+            db_gen = SessionLocal()
+            mensaje_ia = Mensaje(contenido=respuesta_texto, rol="ia", conversacion_id=conversacion_id)
+            db_gen.add(mensaje_ia)
+            db_gen.commit()
+            db_gen.refresh(mensaje_ia)
+            mensaje_ia_id = mensaje_ia.id
+            db_gen.close()
+
+            yield sse({"tipo": "fin", "id": mensaje_ia_id, "fuentes": fuentes})
+
+        except Exception as e:
+            # Si la IA falla a mitad, deshacemos: borramos el mensaje del usuario y devolvemos el cupo.
+            # (Ya hemos respondido 200 con el stream abierto, asi que el error se comunica como un evento.)
+            db_err = SessionLocal()
+            huerfano = db_err.query(Mensaje).filter(Mensaje.id == mensaje_usuario_id).first()
+            if huerfano:
+                db_err.delete(huerfano)
+                db_err.commit()
+            db_err.close()
+            decrementar_cache(clave_limite)
+            log_error(f"Fallo el streaming de IA en la conversacion {conversacion_id}", e)
+            yield sse({"tipo": "error", "detalle": "Error al generar la respuesta de la IA"})
+
+    # text/event-stream + cabeceras para que proxies (nginx) no almacenen en buffer el stream
+    cabeceras = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    return StreamingResponse(generador(), media_type="text/event-stream", headers=cabeceras)
 
 
 

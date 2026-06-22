@@ -10,11 +10,21 @@ class MensajeCrear(BaseModel):
 class MensajeChatEntrada(BaseModel):
     contenido: str
 
+# Una fuente: de que archivo y lineas salio un trozo del contexto usado para responder (para citaciones)
+class FuenteRespuesta(BaseModel):
+    rutaRelativa: str
+    archivo_id: int
+    linea_inicio: int
+    linea_fin: int
+
 # Datos que envias al frontend
 class MensajeRespuesta(BaseModel):
     id: int
     contenido: str
     rol: str
     fecha: datetime
+    # Fuentes del RAG usadas para la respuesta (vacio si la conversacion no esta ligada a un proyecto).
+    # El frontend lo usara para mostrar citaciones clicables; es opcional/compatible hacia atras.
+    fuentes: list[FuenteRespuesta] = []
 
     model_config = {"from_attributes": True}

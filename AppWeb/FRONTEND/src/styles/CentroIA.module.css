@@ -465,6 +465,115 @@
   text-align: center;
 }
 
+/* ── Citaciones (fuentes del RAG) ── */
+/* Columna que envuelve la burbuja de la IA y, debajo, sus citaciones */
+.mensajeColumna {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 75%;
+}
+
+/* La burbuja dentro de la columna ocupa todo el ancho disponible (el tope lo pone la columna) */
+.mensajeColumna .mensajeBurbuja {
+  max-width: 100%;
+}
+
+.fuentes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-left: 0.2rem;
+}
+
+.fuenteChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: var(--c-text-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.fuenteChip:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+  border-color: var(--c-text-2);
+}
+
+/* ── Modal de previsualizacion del archivo citado ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+}
+
+.modalContenido {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  width: min(900px, 100%);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.modalTitulo {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modalCerrar {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--c-text-2);
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+.modalCerrar:hover {
+  color: var(--c-text);
+}
+
+.modalCodigo {
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  font-family: monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--c-text);
+  white-space: pre;
+  tab-size: 4;
+}
+
 /* ── Selector de conversaciones (desplegable encima del input) ── */
 .selectorConversaciones {
   position: relative;

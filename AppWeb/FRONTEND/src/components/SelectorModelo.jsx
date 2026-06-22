@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import apiClient from '../services/api';
 import styles from '../styles/SelectorModelo.module.css';
 
-//Modelos disponibles en la app
+//Modelos disponibles en la app (Qwen3 es el modelo por defecto)
 const MODELOS = [
+  { id: 'qwen/qwen3-32b', nombre: 'Qwen3 32B', proveedor: 'Groq' },
   { id: 'gemini-2.0-flash', nombre: 'Gemini 2.0 Flash', proveedor: 'Google' },
   { id: 'claude-sonnet-4-6', nombre: 'Claude Sonnet 4.6', proveedor: 'Anthropic' },
   { id: 'llama-3.3-70b-versatile', nombre: 'Llama 3.3 70B', proveedor: 'Groq' },

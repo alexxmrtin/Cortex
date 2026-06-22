@@ -14,8 +14,8 @@ Cortex te permite subir proyectos completos (carpetas con su estructura de archi
 - ⚙️ **Gestión de servicios** — registra servicios asociados a tus proyectos (tipo, puerto, estado) con un endpoint de *ping* para comprobar su disponibilidad.
 - 🔌 **Encendido/apagado por SSH** — arranca y para servicios remotos ejecutando comandos por SSH en su máquina. Las credenciales SSH se guardan **cifradas** (Fernet) y nunca se exponen.
 - 📊 **Monitorización en vivo** — panel por servicio con latencia, uso de CPU/RAM/disco y carga del sistema, leídos por SSH (más la latencia medida desde el backend) y cacheados en Redis.
-- 🤖 **Centro de IA** — chatea con distintos modelos de IA. *(El motor de contexto de proyectos está en proceso de reimplementación.)*
-- 🔀 **Multi-modelo** — elige entre **Gemini 2.0 Flash** (Google), **Claude Sonnet 4.6** (Anthropic) o **Llama 3.3 70B** (Groq). El modelo activo se guarda por usuario.
+- 🤖 **Centro de IA (RAG sobre tu código)** — chatea con la IA usando los archivos de un proyecto como contexto. Un motor RAG profesional indexa tu código (chunking + embeddings) y, en cada pregunta, recupera los fragmentos relevantes con **búsqueda híbrida (vectorial + léxica) y reranking**, responde **anclado** en ese contexto **con citaciones** a fichero y líneas, entiende preguntas de seguimiento y entrega la respuesta en **streaming**.
+- 🔀 **Multi-modelo** — elige entre **Qwen3 32B** (Groq, por defecto), **Gemini 2.0 Flash** (Google), **Claude Sonnet 4.6** (Anthropic) o **Llama 3.3 70B** (Groq). El modelo activo se guarda por usuario.
 - 💬 **Historial persistente** — las conversaciones se guardan en la base de datos y se reenvían completas al modelo en cada llamada, para mantener el contexto entre sesiones.
 - 🛡️ **Límites de uso** — máximo 50 peticiones de IA por usuario al día (contador en Redis que se reinicia solo cada día) y 20 conversaciones por usuario (la más antigua se elimina al superar el límite).
 - ⚡ **Caché con Redis** — contador del límite diario de IA y caché del estado de salud del modelo, para evitar consultas y llamadas de pago repetidas.
@@ -61,7 +61,8 @@ Cortex/
 | **Frontend** | React 19, React Router 7, Vite 8, Axios, Lucide React, React Markdown |
 | **Backend**  | FastAPI, Uvicorn, SQLAlchemy 2, Pydantic Settings |
 | **Auth**     | JWT (python-jose) + hashing de contraseñas con bcrypt (passlib) |
-| **IA**       | `google-genai` (Gemini), `anthropic` (Claude), `groq` (Llama) |
+| **IA**       | `google-genai` (Gemini), `anthropic` (Claude), `groq` (Qwen / Llama) |
+| **RAG**      | `chromadb` (base vectorial), `sentence-transformers` con BGE-M3 (embeddings) y BGE-reranker (reranking), `rank-bm25` (búsqueda léxica) |
 | **BD**       | SQLite (migración a PostgreSQL prevista) |
 | **Caché**    | Redis (cliente `redis`) — contador del límite diario y caché del *health* del modelo |
 | **SSH**      | `paramiko` (cliente SSH) + `cryptography` (cifrado Fernet de las credenciales) |
@@ -164,11 +165,18 @@ npm run lint      # Analizar el código con ESLint
 
 ---
 
-## 🤖 Cómo funciona la IA
+## 🤖 Cómo funciona la IA (RAG)
 
-Cada mensaje se envía al modelo activo del usuario (Gemini, Claude o Groq) junto con **todo el historial** de la conversación, ya que ningún modelo recuerda conversaciones entre llamadas. Tras la respuesta, tanto el mensaje del usuario como el de la IA se guardan en la base de datos.
+Cuando una conversación está vinculada a un proyecto, Cortex usa un motor **RAG (Retrieval-Augmented Generation)** construido sobre los archivos de código del proyecto. El flujo, por capas:
 
-> 🚧 El motor de contexto de proyectos (RAG) se ha retirado y está **en proceso de reimplementación**. Por ahora la IA responde solo con el historial de la conversación, sin inyectar archivos del proyecto.
+1. **Ingesta (al subir un archivo).** El fichero se trocea en *chunks* respetando su estructura (líneas, con solapamiento) guardando de qué líneas viene cada uno. Cada chunk se vectoriza con un modelo de **embeddings local** (BGE-M3) y se guarda en una base vectorial **Chroma**, junto con su texto y metadatos en la tabla `ChunkArchivo`. Es **idempotente**: re-subir o reindexar no duplica. Endpoint de reindexado: `POST /proyectos/{id}/reindexar`.
+2. **Recuperación (al preguntar).** Se combinan dos búsquedas: **semántica** (vectorial, Chroma) y **léxica** (BM25), fusionadas con **Reciprocal Rank Fusion**, y se refinan con un **reranker** (cross-encoder BGE) que deja los fragmentos más relevantes. Todo filtrado por usuario y proyecto (**aislamiento**).
+3. **Generación anclada.** Con esos fragmentos se construye un *system prompt* que obliga al modelo a **responder solo desde el contexto**, **abstenerse** si no hay soporte (en vez de inventar) y **citar** fichero y líneas. Incluye mitigación de *"lost in the middle"* y separación anti *prompt-injection*.
+4. **Capa copilot.** Las preguntas de seguimiento ("¿y eso dónde se usa?") se **reescriben** a consultas autónomas usando el historial antes de buscar, y la respuesta se entrega en **streaming (SSE)** token a token, con **citaciones clicables** en el frontend que abren el archivo de origen.
+
+El modelo de generación es el activo del usuario (**Qwen3 32B** por defecto, vía Groq). Los modelos de embeddings y reranking son **locales** (sin coste por API). Como ningún modelo recuerda conversaciones entre llamadas, el historial se reenvía en cada petición; si la conversación no está ligada a un proyecto, la IA responde como un chat normal sin RAG.
+
+> Toda la lógica del motor vive en [`app/Services/RAG/`](AppWeb/BACKEND/app/Services/RAG/). Hay una explicación detallada y didáctica, fase a fase, en [`AppWeb/BACKEND/ExplicacionConstruccionRag.md`](AppWeb/BACKEND/ExplicacionConstruccionRag.md).
 
 ---
 
@@ -389,6 +397,7 @@ Base: `http://localhost:8000`
 | **Usuario** | `id`, `nombreUsuario`, `email`, `contrasena` (hash), `fotoPerfil`, `tema`, `modeloIA` |
 | **Proyecto** | `id`, `nombreproyecto`, `descripcion`, `fechaCreacion`, `usuario_id` |
 | **ArchivosProyecto** | `id`, `nombre`, `rutaRelativa`, `rutaDisco`, `proyecto_id` |
+| **ChunkArchivo** | `id`, `archivo_id`, `proyecto_id`, `usuario_id`, `indice`, `texto`, `linea_inicio`, `linea_fin`, `lenguaje` (fragmentos del RAG; el vector vive en Chroma) |
 | **Servicio** | `id`, `nombre`, `descripcion`, `tipo`, `estado`, `proyectoAsociado`, `host`, `puerto`, `fechaCreacion`, `usuario_id`, + acceso SSH: `puertoSSH`, `usuarioSSH`, `clavePrivadaCifrada`, `passphraseCifrada`, `comandoArranque`, `comandoParada` |
 | **Conversacion** | `id`, `titulo`, `fechaCreacion`, `usuario_id`, `proyecto_id` |
 | **Mensaje** | `id`, `contenido`, `rol` (`usuario`/`ia`), `fecha`, `conversacion_id` |
