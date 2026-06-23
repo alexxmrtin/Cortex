@@ -1,4 +1,4 @@
-# 🧠 Cortex
+# Cortex
 
 > Plataforma web para **gestionar tus proyectos de software y servicios**, con un asistente de **IA integrado** capaz de leer los archivos de tus proyectos y explicártelos.
 
@@ -6,7 +6,7 @@ Cortex te permite subir proyectos completos (carpetas con su estructura de archi
 
 ---
 
-## ✨ Características
+## Características
 
 - 🔐 **Autenticación con JWT** — registro, login y gestión de perfil (foto, tema, contraseña).
 - 📁 **Gestión de proyectos** — sube carpetas completas conservando su estructura de directorios; los archivos se almacenan en disco y se indexan en la base de datos.
@@ -23,7 +23,7 @@ Cortex te permite subir proyectos completos (carpetas con su estructura de archi
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 Cortex está dividido en dos aplicaciones independientes dentro de `AppWeb/`:
 
@@ -70,7 +70,7 @@ Cortex/
 
 ---
 
-## 🚀 Puesta en marcha
+## Puesta en marcha
 
 ### Requisitos previos
 
@@ -165,7 +165,7 @@ npm run lint      # Analizar el código con ESLint
 
 ---
 
-## 🤖 Cómo funciona la IA (RAG)
+## Cómo funciona la IA (RAG)
 
 Cuando una conversación está vinculada a un proyecto, Cortex usa un motor **RAG (Retrieval-Augmented Generation)** construido sobre los archivos de código del proyecto. El flujo, por capas:
 
@@ -180,7 +180,7 @@ El modelo de generación es el activo del usuario (**Qwen3 32B** por defecto, v�
 
 ---
 
-## 🔌 Control de servicios por SSH
+## Control de servicios por SSH
 
 Además de comprobar si un servicio está vivo (*ping* TCP), Cortex permite **encenderlo y apagarlo de forma remota**. El backend abre una conexión **SSH** contra la máquina donde corre el servicio y ejecuta allí el comando que el usuario haya definido (`systemctl start nginx`, `docker stop api`, un script propio…). Toda la lógica de SSH se centraliza en el servicio [`app/Services/SSHService.py`](AppWeb/BACKEND/app/Services/SSHService.py), construido sobre **paramiko**.
 
@@ -234,7 +234,7 @@ El servicio SSH **nunca lanza excepciones hacia el controlador**: traduce cualqu
 
 ---
 
-## 📊 Monitorización de servicios
+## Monitorización de servicios
 
 Cada servicio dispone de un panel de monitorización que muestra, **en vivo**, métricas de la máquina y de la red: **latencia (ms)**, **uso de CPU (%)**, **uso de RAM (%)**, **uso de disco (%)** y **carga del sistema** (load average de 1/5/15 min). La lógica se centraliza en [`app/Services/MonitorService.py`](AppWeb/BACKEND/app/Services/MonitorService.py) y se expone en `GET /servicios/{id}/metricas`.
 
@@ -262,7 +262,7 @@ En el frontend, el panel pinta los porcentajes como **barras de progreso con col
 
 ---
 
-## ⚡ Caché con Redis
+## Caché con Redis
 
 El backend usa **Redis** (almacén clave-valor en memoria) para datos que se consultan mucho y que cuesta producir. Toda la lógica se centraliza en el helper [`app/Helpers/Cache.py`](AppWeb/BACKEND/app/Helpers/Cache.py), que envuelve al cliente `redis` y expone funciones cómodas:
 
@@ -286,7 +286,7 @@ La conexión se configura con `REDIS_URL` en el `.env` (cliente único compartid
 
 ---
 
-## 📋 Logging
+## Logging
 
 El registro se centraliza en el helper [`app/Helpers/Log.py`](AppWeb/BACKEND/app/Helpers/Log.py), construido sobre el módulo **`logging`** de la librería estándar (no requiere dependencia en `requirements.txt`). Aporta **niveles**, **rotación de ficheros** (5 MB × 3 copias) y salida simultánea a **fichero y consola**, con formato unificado:
 
@@ -327,7 +327,7 @@ El registro se centraliza en el helper [`app/Helpers/Log.py`](AppWeb/BACKEND/app
 
 ---
 
-## 📡 API REST
+## API REST
 
 Base: `http://localhost:8000`
 
@@ -404,7 +404,7 @@ Base: `http://localhost:8000`
 
 ---
 
-## 🌓 Tema claro / oscuro
+## Tema claro / oscuro
 
 El tema se implementa con **variables CSS (custom properties)**. Los CSS Modules no usan colores literales sino tokens (`var(--c-*)`), cuyos valores se redefinen según el tema activo. Alternar de tema no recarga estilos: únicamente cambia un atributo en la raíz del documento.
 
