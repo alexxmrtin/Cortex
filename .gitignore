@@ -19,8 +19,12 @@ AppWeb/BACKEND/Storage/
 AppWeb/BACKEND/Logs/
 AppWeb/BACKEND/Cache/
 
-# Otros
-ComoHacerUnRAG.md
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+
 ###FRONTEND###
 
 # Dependencies
