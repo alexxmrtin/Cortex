@@ -29,7 +29,7 @@ def _tokenizar(texto: str) -> list[str]:
     return re.findall(r"[a-zA-Z0-9_]+", texto.lower())
 
 
-# Reciprocal Rank Fusion: recibe varias listas de claves ya ordenadas  y devuelve UNA lista fusionada. 
+# Reciprocal Rank Fusion: recibe varias listas de claves ya ordenadas  y devuelve UNA lista fusionada.
 # Funcionamiento: Tienes dos listas ordenadas, una vectorial y otra lexica, para combinar las dos listas, como estan en escalas diferentes usamos la posicion que ocupa cada elemento en la lista. Cada elemento recibe una puntuacion segun donde esten, si aparecen en ambas listas sumamos esa puntuacion, si aparece en una, ponemos la puntuacion conseguida en una unica lista como total.(Es un poco dificil, lo tienes en obsidian mas claro)
 def _fusionar_rrf(rankings: list[list[str]]) -> list[str]:
     puntuacion = {}
@@ -43,7 +43,7 @@ def _fusionar_rrf(rankings: list[list[str]]) -> list[str]:
     return claves_ordenadas
 
 
-# Funcion principal: devuelve hasta RAG_TOP_N (lo tengo puesto a 50 en el .env) trozos relevantes a la consulta, como lista de dicts: {texto, rutaRelativa, archivo_id, linea_inicio, linea_fin, lenguaje}
+# Funcion principal : devuelve hasta RAG_TOP_N (lo tengo puesto a 50 en el .env) trozos relevantes a la consulta, como lista de dicts: {texto, rutaRelativa, archivo_id, linea_inicio, linea_fin, lenguaje}
 def recuperar(consulta: str, usuario_id: int, proyecto_id: int) -> list[dict]:
     db = SessionLocal()
     

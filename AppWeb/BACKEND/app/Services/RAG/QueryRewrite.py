@@ -21,7 +21,7 @@ _INSTRUCCIONES = (
 )
 
 
-# Convierte los ultimos mensajes del historial en texto plano para dar contexto al reescritor.
+# Convierte los ultimos mensajes del historial en texto plano para dar contexto al reescritor. Coge los ultimos 6 mensajes (6 en el momento que estoy escribiendo este comentario) y los junta en un unico mensaje de texto plano.
 def _texto_historial(historial_previo) -> str:
     recientes = historial_previo[-MAX_MENSAJES_CONTEXTO:]
     lineas = []

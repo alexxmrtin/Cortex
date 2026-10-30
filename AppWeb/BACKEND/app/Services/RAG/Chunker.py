@@ -10,7 +10,7 @@ import os
 
 
 MAX_CARACTERES = 1600 # Tamaño por chunk. ~1600 caracteres equivale aproximadamente a 350-450 tokens de codigo.
-SOLAPAMIENTO_CARACTERES = 240 #Esto es la cantidad de caracteres que vamos a repetir en cada chunk usando el anterior,tienes la explicacion de porque se hace esto en obsidian
+SOLAPAMIENTO_CARACTERES = 240 #Esto es la cantidad de caracteres que vamos a repetir en cada chunk usando el anterior
 
 
 #Lenguajes soportados en el RAG, sirve para ponerlo en los metadatos
@@ -24,7 +24,7 @@ _EXTENSIONES = {
 
 #Detectamos el lenguaje seleccionando la extension al fvinal de la ruta
 def _detectar_lenguaje(ruta_relativa: str):
-    extension = os.path.splitext(ruta_relativa)[1].lower()
+    extension = os.path.splitext(ruta_relativa)[1].lower() # Sacammos la extension del archivo en minuscula
     if extension in _EXTENSIONES:
         return _EXTENSIONES[extension]
     return None
